@@ -1,4 +1,4 @@
-// src/pages/MyListings.jsx
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'react-hot-toast';
@@ -52,7 +52,7 @@ const MyListings = () => {
     setLoading(true);
     
     try {
-      // Try to get from localStorage
+     
       const savedListings = localStorage.getItem('myListings');
       
       if (savedListings) {
@@ -60,14 +60,14 @@ const MyListings = () => {
         console.log('📦 Loaded user listings from localStorage:', parsedListings.length);
         setListings(parsedListings);
       } else {
-        // ✅ Start with empty array
+        
         console.log('📦 No listings found, starting fresh');
         setListings([]);
       }
       
     } catch (error) {
       console.error('❌ Error loading listings:', error);
-      // Start with empty array on error
+      
       setListings([]);
     } finally {
       setTimeout(() => setLoading(false), 500);
@@ -123,7 +123,7 @@ const MyListings = () => {
     }
   };
 
-  // Handle image error
+  
   const handleImageError = (e, listing) => {
     e.target.onerror = null;
     e.target.src = 'https://placehold.co/600x400/cccccc/969696?text=Pet+Image';
@@ -158,7 +158,7 @@ const MyListings = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="container mx-auto px-4 py-8">
         
-        {/* Header */}
+        
         <div className="mb-8">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -186,7 +186,7 @@ const MyListings = () => {
             </Link>
           </div>
 
-          {/* Stats Cards */}
+          
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
               <div className="flex items-center justify-between">

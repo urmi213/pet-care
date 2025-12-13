@@ -46,7 +46,7 @@ const PetsAndSupplies = () => {
       setLoading(true);
       console.log('🔍 Fetching all listings...');
       
-      // Try different endpoints
+      
       const endpoints = [
         'http://localhost:5000/listings',
         'http://localhost:5000/api/listings',
@@ -82,7 +82,7 @@ const PetsAndSupplies = () => {
       
       const data = await response.json();
       
-      // Handle different API response structures
+      
       if (Array.isArray(data)) {
         listingsData = data;
       } else if (data && data.data && Array.isArray(data.data)) {
@@ -97,7 +97,7 @@ const PetsAndSupplies = () => {
         return;
       }
       
-      // Process listings with safe image URLs
+     
       const processedListings = listingsData.map(listing => ({
         _id: listing._id || listing.id || `temp-${Date.now()}-${Math.random()}`,
         name: listing.name || listing.title || 'Unnamed Listing',
@@ -109,7 +109,7 @@ const PetsAndSupplies = () => {
         sellerName: listing.sellerName || 'Pet Owner',
         email: listing.email || 'owner@example.com'
       })).filter(listing => {
-        // STRICT FILTER: No Urmi Chakraborty in any form
+       
         const sellerName = (listing.sellerName || '').toLowerCase();
         const email = (listing.email || '').toLowerCase();
         
@@ -133,9 +133,6 @@ const PetsAndSupplies = () => {
     }
   };
 
-  // Mock data with safe image URLs - NO Urmi Chakraborty
-  
-    // Mock data with safe image URLs - NO Urmi Chakraborty
 const useMockData = () => {
   console.log('🔄 Loading NEW mock data WITHOUT Cat Scratching Post');
   
@@ -296,7 +293,7 @@ const useMockData = () => {
       filtered = filtered.filter(item => item.category === selectedCategory);
     }
 
-    // Filter by search term
+   
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(item => {
@@ -396,7 +393,7 @@ const useMockData = () => {
               Find your perfect pet companion or shop for quality pet supplies all in one place
             </p>
             
-            {/* Quick Stats */}
+           
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               {Object.entries(stats).map(([category, count]) => (
                 <div key={category} className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
@@ -417,8 +414,6 @@ const useMockData = () => {
           </motion.div>
         </div>
       </div>
-
-      {/* Search and Filter Section */}
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           {/* Search Bar */}
@@ -445,7 +440,7 @@ const useMockData = () => {
             )}
           </div>
 
-          {/* Category Filters */}
+         
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <button
@@ -750,7 +745,7 @@ const useMockData = () => {
                   </motion.div>
                 )}
 
-                {/* Accessories Section */}
+                
                 {stats.Accessories > 0 && (
                   <motion.div
                     initial={{ opacity: 0, x: -50 }}
@@ -800,7 +795,7 @@ const useMockData = () => {
                   </motion.div>
                 )}
 
-                {/* Care Products Section */}
+                
                 {stats['Care Products'] > 0 && (
                   <motion.div
                     initial={{ opacity: 0, x: 50 }}

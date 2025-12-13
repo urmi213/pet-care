@@ -34,7 +34,7 @@ const MyOrders = () => {
     document.title = 'My Orders | Pet Marketplace';
   }, []);
 
-  // Fetch orders with mock data fallback
+  // Fetch orders 
   const fetchOrders = async () => {
     if (!user) {
       setLoading(false);
@@ -45,7 +45,6 @@ const MyOrders = () => {
       setLoading(true);
       console.log('🔍 Fetching orders for:', user.email);
 
-      // Try to fetch from backend
       let ordersData = [];
       try {
         const response = await axios.get(
@@ -62,11 +61,10 @@ const MyOrders = () => {
         console.log('✅ Real orders:', ordersData.length);
       } catch (backendError) {
         console.log('Backend unavailable, using mock data');
-        // Fallback to mock data
+        
         ordersData = getMockOrders();
       }
 
-      // Ensure data has correct structure
       const processedOrders = ordersData.map(order => ({
         _id: order._id || `order-${Date.now()}-${Math.random()}`,
         productName: order.productName || order.product || 'Unknown Product',
@@ -85,7 +83,7 @@ const MyOrders = () => {
       
     } catch (error) {
       console.error('Error fetching orders:', error);
-      // Use mock data as final fallback
+     
       setOrders(getMockOrders());
       toast.error('Using demo data. Backend server not available.');
     } finally {
@@ -94,7 +92,6 @@ const MyOrders = () => {
     }
   };
 
-  // Generate mock orders for demo
   const getMockOrders = () => {
     const mockOrders = [
       {

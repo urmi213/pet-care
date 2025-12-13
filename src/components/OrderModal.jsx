@@ -1,4 +1,4 @@
-// src/components/OrderModal.jsx - FIXED VERSION
+
 import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { FaTimes } from 'react-icons/fa';
@@ -21,7 +21,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
     additionalNotes: ''
   });
 
-  // Initialize form when component mounts or listing changes
+  
   useEffect(() => {
     if (!listing || !user) return;
 
@@ -126,7 +126,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
     }
   };
 
-  // If no listing or user, don't render
+  
   if (!listing || !user) {
     console.log('❌ OrderModal: Missing listing or user');
     return null;
@@ -138,15 +138,15 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
+      
       <div 
         className="absolute inset-0 bg-black bg-opacity-50"
         onClick={onClose}
       />
       
-      {/* Modal */}
+      
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10">
-        {/* Header */}
+       
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
@@ -165,9 +165,9 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
           </button>
         </div>
 
-        {/* Form */}
+        
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Buyer Info */}
+         
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -196,7 +196,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             </div>
           </div>
 
-          {/* Address */}
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Delivery Address *
@@ -212,7 +212,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             />
           </div>
 
-          {/* Phone & Date */}
+         
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -246,7 +246,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             </div>
           </div>
 
-          {/* Quantity */}
+        
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Quantity
@@ -263,7 +263,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             />
           </div>
 
-          {/* Notes */}
+         
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Additional Notes (Optional)
@@ -278,7 +278,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             />
           </div>
 
-          {/* Order Summary */}
+          
           <div className="bg-gray-50 p-4 rounded-lg border">
             <div className="flex justify-between items-center">
               <div>
@@ -298,7 +298,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             </div>
           </div>
 
-          {/* Submit Button */}
+          
           <div className="pt-4">
             <button
               type="submit"

@@ -6,8 +6,6 @@ import {
   FaChevronLeft, FaChevronRight, FaBone, FaFirstAid, FaShoppingBasket
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-
-// Safe Image Component for handling image errors
 const SafeImage = ({ src, alt, className, fallback }) => {
   const [imgSrc, setImgSrc] = useState(src);
   
@@ -55,7 +53,6 @@ const Home = () => {
     try {
       setLoading(true);
       
-      // Try to connect to server first
       try {
         const testResponse = await fetch(`${API_URL}/`, { timeout: 3000 });
         if (testResponse.ok) {
@@ -67,7 +64,6 @@ const Home = () => {
         console.log('🌐 Server not connected, using mock data');
       }
       
-      // Always use mock data for now to ensure 6 listings
       const mockData = getMockListings().slice(0, 6);
       setRecentListings(mockData);
       
@@ -78,7 +74,6 @@ const Home = () => {
       
     } catch (error) {
       console.error('❌ Error:', error);
-      // Fallback to mock data
       const mockData = getMockListings().slice(0, 6);
       setRecentListings(mockData);
       toast('Using demo listings data', {
@@ -302,7 +297,7 @@ const Home = () => {
         </div>
       )}
 
-      {/* 1️⃣ Banner Section */}
+      
       <section className="relative h-[70vh] md:h-[80vh] overflow-hidden">
         {bannerSlides.map((slide, index) => (
           <div key={slide.id} className={`absolute inset-0 transition-opacity duration-700 ${index===currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
@@ -336,7 +331,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* 2️⃣ Categories Section */}
+    
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -360,7 +355,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* 3️⃣ Recent Listings Section (ALWAYS 6 ITEMS) */}
+     
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -375,7 +370,7 @@ const Home = () => {
             </div>
           ) : (
             <>
-              {/* Status Message */}
+              
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full">
                   <span className="font-medium">Showing {recentListings.length} listings</span>
@@ -385,7 +380,7 @@ const Home = () => {
                 </div>
               </div>
               
-              {/* Listings Grid - Always shows 6 cards */}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {recentListings.slice(0, 6).map(listing => (
                   <div key={listing._id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 border border-gray-100 group">
@@ -433,7 +428,7 @@ const Home = () => {
                 ))}
               </div>
               
-              {/* View All Button */}
+             
               <div className="text-center mt-12">
                 <Link 
                   to="/pets-supplies" 
@@ -450,7 +445,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* 4️⃣ Adoption Benefits Section */}
+     
       <section className="py-16 bg-blue-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -469,7 +464,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* 5️⃣ Pet Heroes Section */}
+     
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -499,7 +494,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+      
       <section className="py-20 bg-gradient-to-r from-orange-500 to-pink-500 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Find Your Perfect Pet Companion?</h2>

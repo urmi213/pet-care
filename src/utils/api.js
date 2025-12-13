@@ -11,17 +11,17 @@ const api = axios.create({
   }
 });
 
-// API methods
+
 export const listingAPI = {
-  // Get user listings
+  
   getUserListings: (email) => 
     api.get(`/listings/user/${encodeURIComponent(email)}`),
   
-  // Get all listings
+  
   getAllListings: () => 
     api.get('/listings'),
   
-  // Get recent listings
+ 
   getRecentListings: () => 
     api.get('/listings/recent'),
   

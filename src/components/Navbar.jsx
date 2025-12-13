@@ -42,7 +42,7 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+          
           <Link to="/" className="flex items-center space-x-2">
             <motion.div
               whileHover={{ rotate: 360 }}
@@ -55,7 +55,7 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
+          
           <div className="hidden md:flex items-center space-x-6">
             {navLinks.map((link) => (
               <NavLink
@@ -76,7 +76,7 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* User Section */}
+          
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <>
@@ -113,7 +113,7 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          
           <button
             className="md:hidden text-gray-700"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -182,7 +182,7 @@ const Navbar = () => {
         </AnimatePresence>
       </div>
 
-      {/* Tooltips */}
+      
       <Tooltip id="nav-tooltip" />
       <Tooltip id="user-tooltip" />
     </motion.nav>

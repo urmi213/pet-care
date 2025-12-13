@@ -23,7 +23,7 @@ function App() {
           <Navbar />
           <main className="flex-grow">
             <Routes>
-              {/* Public Routes */}
+              
               <Route path="/" element={<Home />} />
               <Route path="/category-filtered-product/:categoryName" element={<CategoryFiltered />} />
               <Route path="/login" element={<Login />} />

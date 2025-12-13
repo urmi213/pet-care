@@ -19,7 +19,6 @@ const Category = () => {
     try {
       setLoading(true);
       
-      // Use the correct API endpoint
       const response = await axios.get(
         `${import.meta.env.VITE_API_URL}/listings/category/${categoryName}`,
         {
@@ -40,11 +39,9 @@ const Category = () => {
     }
   };
 
-  // Format category name for display
   const formatCategoryName = (name) => {
     if (!name) return '';
-    
-    // Handle camelCase or kebab-case
+   
     const formatted = name
       .replace(/([A-Z])/g, ' $1')
       .replace(/-/g, ' ')
@@ -99,7 +96,7 @@ const Category = () => {
 
       {/* Listings Section */}
       <div className="container mx-auto px-4 py-8 md:py-12">
-        {/* Breadcrumb */}
+       
         <div className="mb-8">
           <div className="flex items-center text-sm text-gray-600 mb-2">
             <Link to="/" className="text-blue-600 hover:text-blue-800">
@@ -116,7 +113,7 @@ const Category = () => {
           </div>
         </div>
 
-        {/* Results Header */}
+       
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-white p-6 rounded-lg shadow">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
@@ -135,7 +132,7 @@ const Category = () => {
           </Link>
         </div>
 
-        {/* Listings Grid */}
+       
         {listings.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {listings.map((listing) => (
@@ -143,7 +140,7 @@ const Category = () => {
                 key={listing._id} 
                 className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border border-gray-200"
               >
-                {/* Image Container */}
+                
                 <div className="relative h-56 overflow-hidden">
                   <img 
                     src={listing.image || 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} 
@@ -160,7 +157,7 @@ const Category = () => {
                   </div>
                 </div>
 
-                {/* Listing Details */}
+               
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-1">
                     {listing.name}

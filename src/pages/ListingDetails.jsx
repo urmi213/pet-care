@@ -18,14 +18,11 @@ const ListingDetails = () => {
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
 
-  // Fetch listing details
   useEffect(() => {
     const fetchListingDetails = async () => {
       try {
         setLoading(true);
         console.log('🔍 Fetching listing ID:', id);
-        
-        // Try to get from backend
         const response = await axios.get(`http://localhost:5000/api/listings/${id}`);
         console.log('✅ Backend response:', response.data);
         
@@ -37,7 +34,7 @@ const ListingDetails = () => {
           listingData = response.data;
         }
         
-        // If no data from backend, use mock data
+        
         if (!listingData) {
           console.log('⚠️ Using mock data');
           listingData = getMockListing(id);
@@ -57,7 +54,7 @@ const ListingDetails = () => {
     fetchListingDetails();
   }, [id]);
 
-  // Mock data function
+ 
   const getMockListing = (listingId) => {
     const mockListings = {
       '1': {
@@ -169,28 +166,28 @@ const ListingDetails = () => {
     };
   };
 
-  // Handle order button click
+ 
   const handleOrderClick = () => {
     console.log('🎯 ORDER NOW BUTTON CLICKED!');
     
-    // Log debug info
+   
     console.log('📊 Debug Info:');
     console.log('- User:', user ? 'Logged in as ' + user.email : 'Not logged in');
     console.log('- Listing:', listing);
     
-    // Check if user is logged in
+   
     if (!user) {
       toast.error('Please login to place an order');
       navigate('/login');
       return;
     }
     
-    // Open modal immediately
+    
     console.log('🚀 Opening Order Modal...');
     setShowOrderModal(true);
   };
 
-  // Handle contact seller button click
+  
   const handleContactSeller = () => {
     if (!user) {
       toast.error('Please login to contact seller');
@@ -198,7 +195,7 @@ const ListingDetails = () => {
       return;
     }
     
-    // Open mail client
+    
     const subject = `Inquiry about: ${listing.title || listing.name}`;
     const body = `Hello,\n\nI'm interested in your listing: "${listing.title || listing.name}".\n\nPlease provide more details.\n\nBest regards,\n${user.email || 'User'}`;
     
@@ -207,7 +204,7 @@ const ListingDetails = () => {
     toast.success('Opening email client...');
   };
 
-  // Handle send message in contact modal
+ 
   const handleSendMessage = async () => {
     if (!contactMessage.trim()) {
       toast.error('Please enter a message');
@@ -215,7 +212,7 @@ const ListingDetails = () => {
     }
     
     try {
-      // Send message to backend
+      
       const response = await axios.post('http://localhost:5000/api/messages', {
         to: listing.email,
         from: user.email,
@@ -231,7 +228,7 @@ const ListingDetails = () => {
     } catch (error) {
       console.error('Error sending message:', error);
       
-      // Fallback to email if API fails
+     
       const subject = `Inquiry about: ${listing.title || listing.name}`;
       const body = `Message from ${user.email || 'User'}:\n\n${contactMessage}\n\nRegarding: ${listing.title || listing.name}`;
       
@@ -286,7 +283,7 @@ const ListingDetails = () => {
           </div>
         </div>
 
-        {/* Breadcrumb */}
+        
         <div className="flex items-center text-sm text-gray-600 mb-8">
           <button onClick={() => navigate('/')} className="hover:text-blue-600">
             Home
@@ -302,7 +299,7 @@ const ListingDetails = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Product Image */}
+         
           <div>
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="h-96 overflow-hidden bg-gray-100">
@@ -338,9 +335,9 @@ const ListingDetails = () => {
             </div>
           </div>
 
-          {/* Right Column - Product Details */}
+         
           <div className="space-y-6">
-            {/* Product Info Card */}
+            
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h1 className="text-3xl font-bold text-gray-800 mb-2">
                 {listing.title || listing.name}
@@ -361,7 +358,7 @@ const ListingDetails = () => {
                 </div>
               </div>
 
-              {/* Price Display */}
+             
               <div className={`p-6 rounded-lg mb-6 ${
                 listing.price === 0 
                   ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200' 
@@ -384,7 +381,7 @@ const ListingDetails = () => {
                 </div>
               </div>
 
-              {/* ORDER NOW BUTTON - MAIN */}
+             
               <div className="space-y-4">
                 <button
                   onClick={handleOrderClick}
@@ -393,7 +390,7 @@ const ListingDetails = () => {
                   {listing.category === 'Pets' ? '🐕 ADOPT NOW' : '🛒 ORDER NOW'}
                 </button>
                 
-                {/* Debug Buttons */}
+                
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={() => {
@@ -441,7 +438,7 @@ const ListingDetails = () => {
               </div>
             </div>
 
-            {/* Seller Info Card - Updated with working contact button */}
+           
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Seller Information</h2>
               <div className="flex items-center gap-4 mb-6">
@@ -464,7 +461,7 @@ const ListingDetails = () => {
                 </button>
               </div>
               
-              {/* Seller Contact Details */}
+    
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="flex items-center text-gray-700">
@@ -495,7 +492,7 @@ const ListingDetails = () => {
                     </div>
                   )}
                 </div>
-                {/* Alternative contact button */}
+                
                 <button 
                   onClick={() => setShowContactModal(true)}
                   className="w-full mt-4 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition-colors flex items-center justify-center gap-2"
@@ -509,7 +506,7 @@ const ListingDetails = () => {
         </div>
       </div>
 
-      {/* ORDER MODAL */}
+      
       {showOrderModal && listing && (
         <div>
           {console.log('🎯 RENDERING ORDER MODAL')}
@@ -532,7 +529,7 @@ const ListingDetails = () => {
         </div>
       )}
 
-      {/* CONTACT MODAL */}
+      
       {showContactModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-lg w-full p-6">
@@ -579,7 +576,7 @@ const ListingDetails = () => {
         </div>
       )}
 
-      {/* Debug Overlay - Shows when modal should be visible */}
+      
       {showOrderModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center">
           <div className="bg-white p-8 rounded-xl max-w-md text-center shadow-2xl">

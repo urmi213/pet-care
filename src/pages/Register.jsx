@@ -22,19 +22,19 @@ const Register = () => {
   const validateForm = () => {
     const newErrors = {};
     
-    // Name validation
+    
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
 
-    // Email validation
+    
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
 
-    // Password validation
+   
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -52,7 +52,7 @@ const Register = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
-    // Clear error when user starts typing
+    
     if (errors[e.target.name]) {
       setErrors({
         ...errors,
@@ -108,7 +108,7 @@ const Register = () => {
               <p className="text-gray-600">Join PawMart community today</p>
             </div>
 
-            {/* Google Sign Up */}
+            
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -122,9 +122,9 @@ const Register = () => {
 
             <div className="divider">OR</div>
 
-            {/* Registration Form */}
+            
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Name Input */}
+            
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-medium">Full Name</span>
@@ -149,7 +149,7 @@ const Register = () => {
                 )}
               </div>
 
-              {/* Email Input */}
+             
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-medium">Email Address</span>
@@ -174,7 +174,7 @@ const Register = () => {
                 )}
               </div>
 
-              {/* Password Input */}
+              
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-medium">Password</span>
@@ -254,8 +254,6 @@ const Register = () => {
                   </span>
                 </label>
               </div>
-
-              {/* Submit Button */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

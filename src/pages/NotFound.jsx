@@ -11,7 +11,7 @@ const NotFound = () => {
         transition={{ duration: 0.6 }}
         className="text-center max-w-2xl"
       >
-        {/* Animated Paw Prints */}
+        
         <div className="relative mb-8">
           <motion.div
             animate={{
@@ -66,7 +66,7 @@ const NotFound = () => {
           Don't worry, we'll help you find your way back!
         </p>
 
-        {/* Search Bar */}
+       
         <motion.div
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
@@ -85,7 +85,7 @@ const NotFound = () => {
           </div>
         </motion.div>
 
-        {/* Quick Links */}
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Link to="/" className="card bg-white shadow-lg hover:shadow-xl transition-shadow">
             <div className="card-body items-center text-center">
@@ -112,7 +112,7 @@ const NotFound = () => {
           </Link>
         </div>
 
-        {/* Go Home Button */}
+     
         <motion.div
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -123,7 +123,7 @@ const NotFound = () => {
           </Link>
         </motion.div>
 
-        {/* Fun Facts */}
+       
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
