@@ -18,23 +18,27 @@ const ListingDetails = () => {
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
 
+  // Fetch listing details
   useEffect(() => {
     const fetchListingDetails = async () => {
       try {
         setLoading(true);
         console.log('🔍 Fetching listing ID:', id);
-        const response = await axios.get(`http://localhost:5000/api/listings/${id}`);
+        
+        // ✅ CORRECTED URL - removed /api prefix
+        const response = await axios.get(`http://localhost:5000/listings/${id}`);
         console.log('✅ Backend response:', response.data);
         
         let listingData = null;
         
-        if (response.data?.data) {
-          listingData = response.data.data;
-        } else if (response.data) {
+        // Handle different response formats
+        if (response.data && response.data._id) {
           listingData = response.data;
+        } else if (response.data?.data) {
+          listingData = response.data.data;
         }
         
-        
+        // If no data from backend, use mock data
         if (!listingData) {
           console.log('⚠️ Using mock data');
           listingData = getMockListing(id);
@@ -44,8 +48,21 @@ const ListingDetails = () => {
         
       } catch (error) {
         console.error('❌ Error fetching listing:', error);
+        console.error('Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data
+        });
+        
         // Use mock data on error
-        setListing(getMockListing(id));
+        const mockData = getMockListing(id);
+        setListing(mockData);
+        
+        if (error.response?.status === 404) {
+          toast.error('Product not found on server. Showing sample data.');
+        } else if (error.code === 'ERR_NETWORK') {
+          toast.error('Cannot connect to server. Showing sample data.');
+        }
       } finally {
         setLoading(false);
       }
@@ -54,7 +71,7 @@ const ListingDetails = () => {
     fetchListingDetails();
   }, [id]);
 
- 
+  // Mock data function (fallback)
   const getMockListing = (listingId) => {
     const mockListings = {
       '1': {
@@ -166,28 +183,29 @@ const ListingDetails = () => {
     };
   };
 
- 
+  // Handle order button click
   const handleOrderClick = () => {
     console.log('🎯 ORDER NOW BUTTON CLICKED!');
     
-   
+    // Log debug info
     console.log('📊 Debug Info:');
     console.log('- User:', user ? 'Logged in as ' + user.email : 'Not logged in');
     console.log('- Listing:', listing);
+    console.log('- API URL for orders: http://localhost:5000/orders');
     
-   
+    // Check if user is logged in
     if (!user) {
       toast.error('Please login to place an order');
       navigate('/login');
       return;
     }
     
-    
+    // Open modal immediately
     console.log('🚀 Opening Order Modal...');
     setShowOrderModal(true);
   };
 
-  
+  // Handle contact seller button click
   const handleContactSeller = () => {
     if (!user) {
       toast.error('Please login to contact seller');
@@ -195,16 +213,11 @@ const ListingDetails = () => {
       return;
     }
     
-    
-    const subject = `Inquiry about: ${listing.title || listing.name}`;
-    const body = `Hello,\n\nI'm interested in your listing: "${listing.title || listing.name}".\n\nPlease provide more details.\n\nBest regards,\n${user.email || 'User'}`;
-    
-    window.location.href = `mailto:${listing.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    toast.success('Opening email client...');
+    // Open contact modal
+    setShowContactModal(true);
   };
 
- 
+  // Handle send message in contact modal
   const handleSendMessage = async () => {
     if (!contactMessage.trim()) {
       toast.error('Please enter a message');
@@ -212,31 +225,18 @@ const ListingDetails = () => {
     }
     
     try {
+      // Send message via email
+      const subject = `Inquiry about: ${listing.title || listing.name}`;
+      const body = `Message from ${user.email || 'User'}:\n\n${contactMessage}\n\nRegarding: ${listing.title || listing.name}\n\nProduct URL: ${window.location.href}`;
       
-      const response = await axios.post('http://localhost:5000/api/messages', {
-        to: listing.email,
-        from: user.email,
-        subject: `Inquiry: ${listing.title || listing.name}`,
-        message: contactMessage,
-        listingId: listing._id,
-        listingTitle: listing.title || listing.name
-      });
+      window.location.href = `mailto:${listing.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       
-      toast.success('Message sent successfully!');
+      toast.success('Opening email client...');
       setShowContactModal(false);
       setContactMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
-      
-     
-      const subject = `Inquiry about: ${listing.title || listing.name}`;
-      const body = `Message from ${user.email || 'User'}:\n\n${contactMessage}\n\nRegarding: ${listing.title || listing.name}`;
-      
-      window.location.href = `mailto:${listing.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      
-      toast.success('Opening email client as fallback...');
-      setShowContactModal(false);
-      setContactMessage('');
+      toast.error('Failed to open email client');
     }
   };
 
@@ -250,6 +250,7 @@ const ListingDetails = () => {
         <div className="text-center">
           <div className="text-4xl mb-4">😔</div>
           <h2 className="text-2xl font-bold mb-2">Product Not Found</h2>
+          <p className="text-gray-600 mb-4">The product you're looking for doesn't exist.</p>
           <button 
             onClick={() => navigate('/pets-supplies')}
             className="btn btn-primary mt-4"
@@ -273,6 +274,9 @@ const ListingDetails = () => {
                 Category: <span className="font-bold">{listing.category}</span> | 
                 Price: <span className="font-bold">${listing.price}</span>
               </p>
+              <p className="text-xs text-blue-600 mt-1">
+                API: http://localhost:5000/listings/{id}
+              </p>
             </div>
             <button 
               onClick={() => console.log('Listing State:', { listing, user, showOrderModal, showContactModal })}
@@ -283,7 +287,7 @@ const ListingDetails = () => {
           </div>
         </div>
 
-        
+        {/* Breadcrumb */}
         <div className="flex items-center text-sm text-gray-600 mb-8">
           <button onClick={() => navigate('/')} className="hover:text-blue-600">
             Home
@@ -299,7 +303,7 @@ const ListingDetails = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-         
+          {/* Left Column - Product Image */}
           <div>
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="h-96 overflow-hidden bg-gray-100">
@@ -335,9 +339,9 @@ const ListingDetails = () => {
             </div>
           </div>
 
-         
+          {/* Right Column - Product Details */}
           <div className="space-y-6">
-            
+            {/* Product Info Card */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h1 className="text-3xl font-bold text-gray-800 mb-2">
                 {listing.title || listing.name}
@@ -358,7 +362,7 @@ const ListingDetails = () => {
                 </div>
               </div>
 
-             
+              {/* Price Display */}
               <div className={`p-6 rounded-lg mb-6 ${
                 listing.price === 0 
                   ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200' 
@@ -381,7 +385,7 @@ const ListingDetails = () => {
                 </div>
               </div>
 
-             
+              {/* ORDER NOW BUTTON - MAIN */}
               <div className="space-y-4">
                 <button
                   onClick={handleOrderClick}
@@ -390,31 +394,21 @@ const ListingDetails = () => {
                   {listing.category === 'Pets' ? '🐕 ADOPT NOW' : '🛒 ORDER NOW'}
                 </button>
                 
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <button 
-                    onClick={() => {
-                      console.log('TEST 1: Simple modal open');
-                      setShowOrderModal(true);
-                    }}
-                    className="py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
-                  >
-                    Test Modal 1
-                  </button>
-                  <button 
-                    onClick={() => {
-                      console.log('TEST 2: With user check');
-                      if (!user) {
-                        toast.error('Please login');
-                        return;
-                      }
-                      setShowOrderModal(true);
-                    }}
-                    className="py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium"
-                  >
-                    Test Modal 2
-                  </button>
-                </div>
+                {/* Debug Button */}
+                <button 
+                  onClick={() => {
+                    console.log('Test: Checking user and opening modal');
+                    if (!user) {
+                      toast.error('Please login');
+                      navigate('/login');
+                      return;
+                    }
+                    setShowOrderModal(true);
+                  }}
+                  className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
+                >
+                  Test Order Button
+                </button>
                 
                 <p className="text-center text-sm text-gray-500">
                   Click any button above to open order form
@@ -438,7 +432,7 @@ const ListingDetails = () => {
               </div>
             </div>
 
-           
+            {/* Seller Info Card */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Seller Information</h2>
               <div className="flex items-center gap-4 mb-6">
@@ -461,38 +455,21 @@ const ListingDetails = () => {
                 </button>
               </div>
               
-    
+              {/* Seller Contact Details */}
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="flex items-center text-gray-700">
                     <FaEnvelope className="mr-2 text-gray-500" />
-                    <a 
-                      href={`mailto:${listing.email}`}
-                      className="text-blue-600 hover:text-blue-800 hover:underline truncate"
-                      onClick={(e) => {
-                        if (!user) {
-                          e.preventDefault();
-                          toast.error('Please login to contact seller');
-                          navigate('/login');
-                        }
-                      }}
-                    >
-                      {listing.email}
-                    </a>
+                    <span className="text-blue-600 truncate">{listing.email}</span>
                   </div>
                   {listing.phone && (
                     <div className="flex items-center text-gray-700">
                       <FaPhone className="mr-2 text-gray-500" />
-                      <a 
-                        href={`tel:${listing.phone}`}
-                        className="text-blue-600 hover:text-blue-800 hover:underline"
-                      >
-                        {listing.phone}
-                      </a>
+                      <span className="text-blue-600">{listing.phone}</span>
                     </div>
                   )}
                 </div>
-                
+                {/* Direct message button */}
                 <button 
                   onClick={() => setShowContactModal(true)}
                   className="w-full mt-4 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition-colors flex items-center justify-center gap-2"
@@ -506,30 +483,26 @@ const ListingDetails = () => {
         </div>
       </div>
 
-      
+      {/* ORDER MODAL */}
       {showOrderModal && listing && (
-        <div>
-          {console.log('🎯 RENDERING ORDER MODAL')}
-          {console.log('Listing for modal:', listing)}
-          <OrderModal
-            listing={listing}
-            onClose={() => {
-              console.log('Modal closing');
-              setShowOrderModal(false);
-            }}
-            onSuccess={() => {
-              console.log('Order successful!');
-              setShowOrderModal(false);
-              toast.success('Order placed successfully! 🎉');
-              setTimeout(() => {
-                navigate('/my-orders');
-              }, 1500);
-            }}
-          />
-        </div>
+        <OrderModal
+          listing={listing}
+          onClose={() => {
+            console.log('Modal closing');
+            setShowOrderModal(false);
+          }}
+          onSuccess={() => {
+            console.log('Order successful!');
+            setShowOrderModal(false);
+            toast.success('Order placed successfully! 🎉');
+            setTimeout(() => {
+              navigate('/my-orders');
+            }, 1500);
+          }}
+        />
       )}
 
-      
+      {/* CONTACT MODAL */}
       {showContactModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-lg w-full p-6">
@@ -572,26 +545,6 @@ const ListingDetails = () => {
                 Send Message
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      
-      {showOrderModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-xl max-w-md text-center shadow-2xl">
-            <div className="text-6xl mb-4">✅</div>
-            <h3 className="text-2xl font-bold mb-4">Modal is OPEN!</h3>
-            <p className="mb-2 text-gray-700">OrderModal should be visible now.</p>
-            <p className="text-sm text-gray-500 mb-6">
-              If you don't see the order form, check console for errors.
-            </p>
-            <button 
-              onClick={() => setShowOrderModal(false)}
-              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-            >
-              Close Debug View
-            </button>
           </div>
         </div>
       )}

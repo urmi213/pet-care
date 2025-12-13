@@ -1,4 +1,3 @@
-
 import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { FaTimes } from 'react-icons/fa';
@@ -21,7 +20,6 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
     additionalNotes: ''
   });
 
-  
   useEffect(() => {
     if (!listing || !user) return;
 
@@ -84,12 +82,14 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
     };
     
     console.log('🚀 Sending order to backend:', orderPayload);
+    console.log('📡 API URL: http://localhost:5000/orders');
 
     setLoading(true);
     
     try {
+      // ✅ CORRECTED URL - removed /api prefix
       const response = await axios.post(
-        'http://localhost:5000/api/orders',
+        'http://localhost:5000/orders',  // শুধু /orders
         orderPayload,
         {
           headers: { 'Content-Type': 'application/json' },
@@ -112,13 +112,40 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
       
     } catch (error) {
       console.error('❌ Order submission error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else if (error.code === 'ERR_NETWORK') {
-        toast.error('Network error. Check backend server.');
+      // Detailed error handling
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        if (error.response.status === 404) {
+          toast.error('API endpoint not found. Check backend URL.');
+        } else if (error.response.status === 400) {
+          toast.error(error.response.data?.message || 'Invalid request data');
+        } else {
+          toast.error(error.response.data?.message || 'Server error');
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('No response received. Check if backend is running.');
+        toast.error('Cannot connect to server. Make sure backend is running.');
+        
+        // Quick test: Check if backend is accessible
+        try {
+          const healthCheck = await axios.get('http://localhost:5000/health', { timeout: 3000 });
+          console.log('Health check response:', healthCheck.data);
+        } catch (healthError) {
+          console.error('Backend health check failed:', healthError.message);
+          toast.error('Backend server is not running. Start server first.');
+        }
       } else {
-        toast.error('Failed to place order');
+        // Something happened in setting up the request
+        toast.error('Failed to place order: ' + error.message);
       }
       
     } finally {
@@ -126,7 +153,6 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
     }
   };
 
-  
   if (!listing || !user) {
     console.log('❌ OrderModal: Missing listing or user');
     return null;
@@ -144,9 +170,8 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
         onClick={onClose}
       />
       
-      
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10">
-       
+        
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
@@ -154,6 +179,9 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             </h2>
             <p className="text-gray-600 text-sm">
               Product: <span className="font-semibold">{formData.productName}</span>
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              API: http://localhost:5000/orders
             </p>
           </div>
           <button
@@ -165,9 +193,8 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
           </button>
         </div>
 
-        
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-         
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -196,7 +223,6 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             </div>
           </div>
 
-          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Delivery Address *
@@ -212,7 +238,6 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             />
           </div>
 
-         
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -246,7 +271,6 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             </div>
           </div>
 
-        
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Quantity
@@ -263,7 +287,6 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             />
           </div>
 
-         
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Additional Notes (Optional)
@@ -278,7 +301,6 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             />
           </div>
 
-          
           <div className="bg-gray-50 p-4 rounded-lg border">
             <div className="flex justify-between items-center">
               <div>
@@ -298,7 +320,6 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             </div>
           </div>
 
-          
           <div className="pt-4">
             <button
               type="submit"

@@ -1,21 +1,16 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { 
-  FaFilePdf, 
   FaShoppingCart, 
   FaMoneyBillWave, 
   FaRedo, 
-  FaPlus,
-  FaFilter,
-  FaDownload,
   FaUser,
   FaCalendar,
   FaPhone,
   FaMapMarkerAlt,
-  FaTag
+  FaTag,
+  FaPaw
 } from 'react-icons/fa';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -34,39 +29,43 @@ const MyOrders = () => {
     document.title = 'My Orders | Pet Marketplace';
   }, []);
 
-  // Fetch orders 
+  // Fetch REAL orders only (no mock data)
   const fetchOrders = async () => {
     if (!user) {
       setLoading(false);
+      setOrders([]); // Empty array if no user
       return;
     }
 
     try {
       setLoading(true);
-      console.log('🔍 Fetching orders for:', user.email);
+      console.log('🔍 Fetching REAL orders for:', user.email);
+      console.log('📡 API URL:', `http://localhost:5000/orders/user/${user.email}`);
 
+      // ✅ CORRECTED URL - removed /api prefix
+      const response = await axios.get(
+        `http://localhost:5000/orders/user/${user.email}`,  // শুধু /orders/user/:email
+        { timeout: 5000 }
+      );
+      
+      console.log('📦 Backend response:', response.data);
+      
       let ordersData = [];
-      try {
-        const response = await axios.get(
-          `http://localhost:5000/api/orders/user/${user.email}`,
-          { timeout: 5000 }
-        );
-        
-        if (Array.isArray(response.data)) {
-          ordersData = response.data;
-        } else if (response.data?.data) {
-          ordersData = response.data.data;
-        }
-        
-        console.log('✅ Real orders:', ordersData.length);
-      } catch (backendError) {
-        console.log('Backend unavailable, using mock data');
-        
-        ordersData = getMockOrders();
+      
+      if (response.data && Array.isArray(response.data)) {
+        ordersData = response.data;
+        console.log('✅ Found orders (direct array):', ordersData.length);
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        ordersData = response.data.data;
+        console.log('✅ Found orders (nested data):', ordersData.length);
+      } else if (response.data?.success && Array.isArray(response.data.data)) {
+        ordersData = response.data.data;
+        console.log('✅ Found orders (success format):', ordersData.length);
       }
 
+      // Process the orders
       const processedOrders = ordersData.map(order => ({
-        _id: order._id || `order-${Date.now()}-${Math.random()}`,
+        _id: order._id || order.id,
         productName: order.productName || order.product || 'Unknown Product',
         buyerName: order.buyerName || user.displayName || user.email?.split('@')[0] || 'Customer',
         email: order.email || user.email,
@@ -79,92 +78,35 @@ const MyOrders = () => {
         type: order.price === 0 ? 'Pet Adoption' : 'Product'
       }));
 
+      console.log('📊 Processed orders:', processedOrders);
       setOrders(processedOrders);
       
     } catch (error) {
-      console.error('Error fetching orders:', error);
-     
-      setOrders(getMockOrders());
-      toast.error('Using demo data. Backend server not available.');
+      console.error('❌ Error fetching orders:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      // No mock data - show empty state
+      setOrders([]);
+      
+      if (error.response?.status === 404) {
+        toast.error('Orders API not found. Check backend URL.');
+      } else if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+        toast.error('Cannot connect to backend server.');
+      } else {
+        toast.error('No orders found. Place your first order!');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const getMockOrders = () => {
-    const mockOrders = [
-      {
-        _id: 'order-1',
-        productName: 'Golden Retriever Puppy',
-        buyerName: user?.displayName || 'John Doe',
-        email: user?.email || 'john@example.com',
-        price: 0,
-        quantity: 1,
-        address: '123 Main St, Dhaka 1212',
-        date: '2024-01-15',
-        phone: '01712345678',
-        status: 'completed',
-        type: 'Pet Adoption'
-      },
-      {
-        _id: 'order-2',
-        productName: 'Premium Dog Food 5kg',
-        buyerName: user?.displayName || 'John Doe',
-        email: user?.email || 'john@example.com',
-        price: 25,
-        quantity: 2,
-        address: '123 Main St, Dhaka 1212',
-        date: '2024-01-10',
-        phone: '01712345678',
-        status: 'delivered',
-        type: 'Product'
-      },
-      {
-        _id: 'order-3',
-        productName: 'Cat Scratching Post',
-        buyerName: user?.displayName || 'John Doe',
-        email: user?.email || 'john@example.com',
-        price: 35,
-        quantity: 1,
-        address: '123 Main St, Dhaka 1212',
-        date: '2024-01-05',
-        phone: '01712345678',
-        status: 'shipped',
-        type: 'Product'
-      },
-      {
-        _id: 'order-4',
-        productName: 'Persian Kitten',
-        buyerName: user?.displayName || 'John Doe',
-        email: user?.email || 'john@example.com',
-        price: 150,
-        quantity: 1,
-        address: '123 Main St, Dhaka 1212',
-        date: '2023-12-20',
-        phone: '01712345678',
-        status: 'completed',
-        type: 'Pet Adoption'
-      },
-      {
-        _id: 'order-5',
-        productName: 'Pet Shampoo',
-        buyerName: user?.displayName || 'John Doe',
-        email: user?.email || 'john@example.com',
-        price: 12,
-        quantity: 3,
-        address: '123 Main St, Dhaka 1212',
-        date: '2023-12-15',
-        phone: '01712345678',
-        status: 'pending',
-        type: 'Product'
-      }
-    ];
-    
-    return mockOrders;
-  };
-
-  // Initial fetch
+  // Initial fetch - only real orders
   useEffect(() => {
     if (!authLoading) {
       fetchOrders();
@@ -178,26 +120,6 @@ const MyOrders = () => {
     toast.success('Refreshing orders...');
   };
 
-  // Create test order
-  const createTestOrder = () => {
-    const testOrder = {
-      _id: `test-${Date.now()}`,
-      productName: 'Test Product - Pet Toys',
-      buyerName: user?.displayName || 'Test User',
-      email: user?.email,
-      price: 19.99,
-      quantity: 1,
-      address: '456 Test Avenue, Dhaka',
-      date: new Date().toISOString().split('T')[0],
-      phone: '01876543210',
-      status: 'pending',
-      type: 'Product'
-    };
-    
-    setOrders(prev => [testOrder, ...prev]);
-    toast.success('Test order added successfully!');
-  };
-
   // Filter orders
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
@@ -205,102 +127,6 @@ const MyOrders = () => {
     if (filter === 'products') return order.price > 0;
     return true;
   });
-
-  // Generate PDF Report
-  const generatePDF = () => {
-    if (filteredOrders.length === 0) {
-      toast.error('No orders to export');
-      return;
-    }
-
-    try {
-      const doc = new jsPDF();
-      
-      // Title and Header
-      doc.setFontSize(20);
-      doc.setTextColor(40, 40, 40);
-      doc.text('PET MARKETPLACE - ORDER REPORT', 20, 20);
-      
-      doc.setFontSize(11);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Customer: ${user?.displayName || user?.email || 'User'}`, 20, 30);
-      doc.text(`Report Date: ${new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })}`, 20, 37);
-      doc.text(`Total Orders: ${filteredOrders.length}`, 20, 44);
-      
-      // Prepare table data
-      const tableData = filteredOrders.map((order, index) => [
-        index + 1,
-        order.productName,
-        order.buyerName,
-        order.type,
-        order.quantity,
-        order.price === 0 ? 'FREE' : `$${order.price.toFixed(2)}`,
-        `$${(order.price * order.quantity).toFixed(2)}`,
-        order.address,
-        order.date.split('T')[0],
-        order.phone,
-        order.status.toUpperCase()
-      ]);
-      
-      // Create table
-      autoTable(doc, {
-        startY: 50,
-        head: [
-          ['#', 'Product Name', 'Buyer', 'Type', 'Qty', 'Unit Price', 'Total', 'Address', 'Date', 'Phone', 'Status']
-        ],
-        body: tableData,
-        theme: 'grid',
-        headStyles: { 
-          fillColor: [59, 130, 246],
-          textColor: 255,
-          fontSize: 10,
-          fontStyle: 'bold'
-        },
-        bodyStyles: { fontSize: 9 },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: {
-          0: { cellWidth: 10 },  // #
-          1: { cellWidth: 35 },  // Product Name
-          2: { cellWidth: 25 },  // Buyer
-          3: { cellWidth: 20 },  // Type
-          4: { cellWidth: 15 },  // Qty
-          5: { cellWidth: 20 },  // Unit Price
-          6: { cellWidth: 20 },  // Total
-          7: { cellWidth: 40 },  // Address
-          8: { cellWidth: 25 },  // Date
-          9: { cellWidth: 25 },  // Phone
-          10: { cellWidth: 20 }  // Status
-        },
-        margin: { left: 20 },
-        styles: { overflow: 'linebreak', cellPadding: 2 },
-        didDrawPage: (data) => {
-          // Footer
-          doc.setFontSize(10);
-          doc.setTextColor(150, 150, 150);
-          doc.text(
-            `Page ${data.pageNumber}`,
-            data.settings.margin.left,
-            doc.internal.pageSize.height - 10
-          );
-        }
-      });
-      
-      // Save PDF
-      const timestamp = new Date().toISOString().slice(0, 10);
-      const filename = `orders-report-${user?.email?.split('@')[0] || 'user'}-${timestamp}.pdf`;
-      doc.save(filename);
-      
-      toast.success('PDF report downloaded successfully!');
-      
-    } catch (error) {
-      console.error('PDF generation error:', error);
-      toast.error('Failed to generate PDF');
-    }
-  };
 
   // Calculate statistics
   const stats = {
@@ -394,15 +220,12 @@ const MyOrders = () => {
                   {user.email}
                 </div>
               </div>
+              <p className="text-xs text-blue-200 mt-2">
+                API: http://localhost:5000/orders/user/{user.email}
+              </p>
             </div>
             
             <div className="flex flex-wrap gap-3">
-              <button
-                onClick={createTestOrder}
-                className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-medium rounded-lg transition duration-200 flex items-center gap-2"
-              >
-                <FaPlus /> Add Test Order
-              </button>
               <button
                 onClick={refreshOrders}
                 disabled={refreshing}
@@ -410,12 +233,12 @@ const MyOrders = () => {
               >
                 <FaRedo className={`${refreshing ? 'animate-spin' : ''}`} /> Refresh
               </button>
-              {filteredOrders.length > 0 && (
+              {orders.length === 0 && (
                 <button
-                  onClick={generatePDF}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition duration-200 flex items-center gap-2"
+                  onClick={() => navigate('/pets-supplies')}
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition duration-200 flex items-center gap-2"
                 >
-                  <FaFilePdf /> Export PDF
+                  <FaPaw /> Shop Now
                 </button>
               )}
             </div>
@@ -424,102 +247,106 @@ const MyOrders = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FaShoppingCart className="text-xl text-blue-600" />
+        {/* Stats Cards - Show only if there are orders */}
+        {orders.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-xl shadow p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <FaShoppingCart className="text-xl text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Total Orders</p>
+                  <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-gray-500 text-sm">Total Orders</p>
-                <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <span className="text-xl">🐕</span>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Pets Adopted</p>
+                  <p className="text-2xl font-bold text-gray-800">{stats.pets}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <FaTag className="text-xl text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Products</p>
+                  <p className="text-2xl font-bold text-gray-800">{stats.products}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-yellow-100 rounded-lg">
+                  <FaMoneyBillWave className="text-xl text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Total Value</p>
+                  <p className="text-2xl font-bold text-gray-800">${stats.totalValue.toFixed(2)}</p>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <span className="text-xl">🐕</span>
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Pets Adopted</p>
-                <p className="text-2xl font-bold text-gray-800">{stats.pets}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <FaTag className="text-xl text-purple-600" />
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Products</p>
-                <p className="text-2xl font-bold text-gray-800">{stats.products}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <FaMoneyBillWave className="text-xl text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Total Value</p>
-                <p className="text-2xl font-bold text-gray-800">${stats.totalValue.toFixed(2)}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
 
-        {/* Filter Tabs */}
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-5 py-2.5 rounded-lg font-medium transition duration-200 flex items-center gap-2 ${
-                filter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <FaFilter /> All Orders ({stats.total})
-            </button>
-            <button
-              onClick={() => setFilter('pets')}
-              className={`px-5 py-2.5 rounded-lg font-medium transition duration-200 flex items-center gap-2 ${
-                filter === 'pets'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <span>🐾</span> Pets ({stats.pets})
-            </button>
-            <button
-              onClick={() => setFilter('products')}
-              className={`px-5 py-2.5 rounded-lg font-medium transition duration-200 flex items-center gap-2 ${
-                filter === 'products'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <FaTag /> Products ({stats.products})
-            </button>
+        {/* Filter Tabs - Show only if there are orders */}
+        {orders.length > 0 && (
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-5 py-2.5 rounded-lg font-medium transition duration-200 flex items-center gap-2 ${
+                  filter === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                All Orders ({stats.total})
+              </button>
+              <button
+                onClick={() => setFilter('pets')}
+                className={`px-5 py-2.5 rounded-lg font-medium transition duration-200 flex items-center gap-2 ${
+                  filter === 'pets'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                <span>🐾</span> Pets ({stats.pets})
+              </button>
+              <button
+                onClick={() => setFilter('products')}
+                className={`px-5 py-2.5 rounded-lg font-medium transition duration-200 flex items-center gap-2 ${
+                  filter === 'products'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                <FaTag /> Products ({stats.products})
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Orders Table */}
-        {filteredOrders.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+        {/* Empty State - When no orders */}
+        {orders.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-lg p-12 text-center max-w-2xl mx-auto">
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <FaShoppingCart className="text-3xl text-gray-400" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">No Orders Found</h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              You haven't placed any orders yet. Browse our pets and products to get started!
+            <h3 className="text-2xl font-bold text-gray-800 mb-3">No Orders Yet</h3>
+            <p className="text-gray-600 mb-6">
+              You haven't placed any orders yet. Browse our pets and products to make your first order!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
@@ -529,135 +356,131 @@ const MyOrders = () => {
                 <FaShoppingCart /> Browse Marketplace
               </button>
               <button
-                onClick={createTestOrder}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                onClick={() => navigate('/')}
+                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition duration-200"
               >
-                <FaPlus /> Add Test Order
+                Go to Home
               </button>
+            </div>
+            <div className="mt-6 text-xs text-gray-500">
+              <p>API Status: <span className="font-mono">http://localhost:5000/orders/user/{user?.email}</span></p>
             </div>
           </div>
         ) : (
-          <>
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="text-left px-6 py-4 font-semibold text-gray-700">Product / Listing</th>
-                      <th className="text-left px-6 py-4 font-semibold text-gray-700">Buyer</th>
-                      <th className="text-left px-6 py-4 font-semibold text-gray-700">Price</th>
-                      <th className="text-left px-6 py-4 font-semibold text-gray-700">Qty</th>
-                      <th className="text-left px-6 py-4 font-semibold text-gray-700">Address</th>
-                      <th className="text-left px-6 py-4 font-semibold text-gray-700">Date</th>
-                      <th className="text-left px-6 py-4 font-semibold text-gray-700">Phone</th>
-                      <th className="text-left px-6 py-4 font-semibold text-gray-700">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredOrders.map((order) => (
-                      <tr 
-                        key={order._id} 
-                        className="border-b hover:bg-gray-50 transition duration-150"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-gray-900">{order.productName}</div>
-                          <div className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                            <span className={`px-2 py-0.5 rounded text-xs ${
-                              order.type === 'Pet Adoption' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {order.type}
-                            </span>
-                          </div>
-                        </td>
-                        
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                              <FaUser className="w-3 h-3 text-gray-600" />
-                            </div>
-                            <span className="font-medium">{order.buyerName}</span>
-                          </div>
-                          <div className="text-sm text-gray-500 mt-1">{order.email}</div>
-                        </td>
-                        
-                        <td className="px-6 py-4">
-                          <div className={`font-bold ${
-                            order.price === 0 ? 'text-green-600' : 'text-blue-600'
+          /* Orders Table - When there are orders */
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="text-left px-6 py-4 font-semibold text-gray-700">Product / Listing</th>
+                    <th className="text-left px-6 py-4 font-semibold text-gray-700">Buyer</th>
+                    <th className="text-left px-6 py-4 font-semibold text-gray-700">Price</th>
+                    <th className="text-left px-6 py-4 font-semibold text-gray-700">Qty</th>
+                    <th className="text-left px-6 py-4 font-semibold text-gray-700">Address</th>
+                    <th className="text-left px-6 py-4 font-semibold text-gray-700">Date</th>
+                    <th className="text-left px-6 py-4 font-semibold text-gray-700">Phone</th>
+                    <th className="text-left px-6 py-4 font-semibold text-gray-700">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.map((order) => (
+                    <tr 
+                      key={order._id} 
+                      className="border-b hover:bg-gray-50 transition duration-150"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-gray-900">{order.productName}</div>
+                        <div className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                          <span className={`px-2 py-0.5 rounded text-xs ${
+                            order.type === 'Pet Adoption' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
                           }`}>
-                            {order.price === 0 ? 'FREE' : `$${order.price.toFixed(2)}`}
-                          </div>
-                          {order.price > 0 && order.quantity > 1 && (
-                            <div className="text-sm text-gray-500">
-                              Total: ${(order.price * order.quantity).toFixed(2)}
-                            </div>
-                          )}
-                        </td>
-                        
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-center">{order.quantity}</div>
-                        </td>
-                        
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 max-w-[180px]">
-                            <FaMapMarkerAlt className="text-gray-400 flex-shrink-0" />
-                            <span className="text-sm truncate" title={order.address}>
-                              {order.address}
-                            </span>
-                          </div>
-                        </td>
-                        
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <FaCalendar className="text-gray-400" />
-                            <span className="text-sm">{formatDate(order.date)}</span>
-                          </div>
-                        </td>
-                        
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <FaPhone className="text-gray-400" />
-                            <span className="text-sm font-mono">{order.phone}</span>
-                          </div>
-                        </td>
-                        
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            {order.type}
                           </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                            <FaUser className="w-3 h-3 text-gray-600" />
+                          </div>
+                          <span className="font-medium">{order.buyerName}</span>
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">{order.email}</div>
+                      </td>
+                      
+                      <td className="px-6 py-4">
+                        <div className={`font-bold ${
+                          order.price === 0 ? 'text-green-600' : 'text-blue-600'
+                        }`}>
+                          {order.price === 0 ? 'FREE' : `$${order.price.toFixed(2)}`}
+                        </div>
+                        {order.price > 0 && order.quantity > 1 && (
+                          <div className="text-sm text-gray-500">
+                            Total: ${(order.price * order.quantity).toFixed(2)}
+                          </div>
+                        )}
+                      </td>
+                      
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-center">{order.quantity}</div>
+                      </td>
+                      
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 max-w-[180px]">
+                          <FaMapMarkerAlt className="text-gray-400 flex-shrink-0" />
+                          <span className="text-sm truncate" title={order.address}>
+                            {order.address}
+                          </span>
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <FaCalendar className="text-gray-400" />
+                          <span className="text-sm">{formatDate(order.date)}</span>
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <FaPhone className="text-gray-400" />
+                          <span className="text-sm font-mono">{order.phone}</span>
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            
-            {/* Table Footer */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 bg-white rounded-xl shadow-lg">
-              <div className="text-sm text-gray-600">
-                Showing <span className="font-semibold">{filteredOrders.length}</span> orders
-                {filter !== 'all' && ` (filtered from ${orders.length} total)`}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={refreshOrders}
-                  disabled={refreshing}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition duration-200 flex items-center gap-2 disabled:opacity-50"
-                >
-                  <FaRedo className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </button>
-                <button
-                  onClick={generatePDF}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition duration-200 flex items-center gap-2"
-                >
-                  <FaDownload /> Download PDF Report
-                </button>
-              </div>
+          </div>
+        )}
+
+        {/* Table Footer - Only show if there are orders */}
+        {orders.length > 0 && (
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 bg-white rounded-xl shadow-lg mt-6">
+            <div className="text-sm text-gray-600">
+              Showing <span className="font-semibold">{filteredOrders.length}</span> orders
+              {filter !== 'all' && ` (filtered from ${orders.length} total)`}
             </div>
-          </>
+            <button
+              onClick={refreshOrders}
+              disabled={refreshing}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition duration-200 flex items-center gap-2 disabled:opacity-50"
+            >
+              <FaRedo className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
         )}
       </div>
     </div>

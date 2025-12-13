@@ -222,7 +222,7 @@ const CategoryFilteredProducts = () => {
         category: 'Care Products',
         price: 28,
         location: 'Sylhet',
-        image: 'https://images.unsplash.com/photo-1583339793403-3d9b001b6008?w=800&auto=format&fit=crop&q=80',
+        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbLm-axSwlzQS2Q7TDt6f3ulkHkMOsnHw_Yw&s',
         description: 'Complete first aid kit for pets.',
         createdAt: '2024-01-06'
       },
@@ -232,7 +232,7 @@ const CategoryFilteredProducts = () => {
         category: 'Care Products',
         price: 19,
         location: 'Chattogram',
-        image: 'https://images.unsplash.com/photo-1583339522870-0d9f28cef33f?w=800&auto=format&fit=crop&q=80',
+        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtuTWXv0qXGzhIeW51o0kjzzq747jRbwmxNQ&s',
         description: 'Effective flea and tick treatment.',
         createdAt: '2024-01-04'
       }

@@ -1,16 +1,102 @@
-# React + Vite
+## Overview
+PawMart is a full-stack web application for pet adoption and pet supplies shopping. Connect with pet owners, find your perfect furry friend, and get all their supplies in one convenient platform.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Key Features
+ Pet Adoption Platform
+Browse adoptable pets with detailed profiles
 
-Currently, two official plugins are available:
+Filter pets by breed, age, location, and price
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+FREE adoption options for rescued animals
 
-## React Compiler
+Direct contact with pet owners
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## E-commerce Marketplace
+Shop for pet food, toys, and accessories
 
-## Expanding the ESLint configuration
+Categories: Pets, Food, Accessories, Care Products
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Secure checkout and order management
+
+User-friendly shopping experience
+
+## Secure User System
+JWT-based authentication
+
+User profiles and dashboard
+
+Protected routes and data
+
+Verified seller system
+
+## Communication Tools
+Direct messaging between users
+
+Email contact options
+
+Real-time notifications
+
+Built-in contact forms
+
+## Responsive Design
+Mobile-friendly interface
+
+Fast loading performance
+
+Intuitive navigation
+
+Clean, modern UI
+
+## Tech Stack
+Frontend:
+React 18 with Hooks
+
+React Router v6
+
+Tailwind CSS for styling
+
+Axios for API calls
+
+Context API for state management
+
+React Hot Toast for notifications
+
+Backend:
+Node.js with Express
+
+MongoDB Atlas (Cloud Database)
+
+JWT for authentication
+
+CORS enabled
+
+RESTful API architecture
+
+Development:
+Git for version control
+
+VS Code as IDE
+
+Postman for API testing
+
+Netlify/Vercel for deployment
+
+## Quick Start
+Prerequisites
+Node.js 16+ and npm
+
+MongoDB Atlas account (or local MongoDB)
+
+Git
+## Pages
+Home Page - Featured pets and products
+
+Listings Page - Browse all listings
+
+Listing Details - View detailed product info
+
+My Orders - Track your purchases
+
+User Dashboard - Manage account and listings
+
+Contact Page - Get in touch with support
