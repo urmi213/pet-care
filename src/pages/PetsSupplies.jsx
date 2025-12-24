@@ -48,8 +48,8 @@ const PetsAndSupplies = () => {
       
       
       const endpoints = [
-        'http://localhost:5000/listings',
-        'http://localhost:5000/api/listings',
+        'https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app/listings',
+        'https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app/api/listings',
         'https://your-server.vercel.app/listings'
       ];
       

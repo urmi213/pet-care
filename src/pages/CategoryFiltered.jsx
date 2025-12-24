@@ -51,7 +51,7 @@ const CategoryFilteredProducts = () => {
       
       // Try backend API first
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const API_URL = import.meta.env.VITE_API_URL || 'https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app';
         const response = await axios.get(`${API_URL}/api/listings`);
         
         if (response.data.success) {

@@ -26,7 +26,7 @@ const ListingDetails = () => {
         console.log('🔍 Fetching listing ID:', id);
         
         // ✅ CORRECTED URL - removed /api prefix
-        const response = await axios.get(`http://localhost:5000/listings/${id}`);
+        const response = await axios.get(`https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app/listings/${id}`);
         console.log('✅ Backend response:', response.data);
         
         let listingData = null;
@@ -191,7 +191,7 @@ const ListingDetails = () => {
     console.log('📊 Debug Info:');
     console.log('- User:', user ? 'Logged in as ' + user.email : 'Not logged in');
     console.log('- Listing:', listing);
-    console.log('- API URL for orders: http://localhost:5000/orders');
+    console.log('- API URL for orders: https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app/orders');
     
     // Check if user is logged in
     if (!user) {
@@ -275,7 +275,7 @@ const ListingDetails = () => {
                 Price: <span className="font-bold">${listing.price}</span>
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                API: http://localhost:5000/listings/{id}
+                API: https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app/listings/{id}
               </p>
             </div>
             <button 
