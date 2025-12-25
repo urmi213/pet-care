@@ -35,7 +35,7 @@ const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app';
+ const API_URL = 'https://backend-10-five.vercel.app';
   const defaultPetImage = 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800&auto=format&fit=crop&q=80';
   const defaultPersonImage = 'https://www.lucypetproducts.com/wp-content/uploads/2021/04/Brandon_McMillan.jpg';
 
@@ -54,11 +54,20 @@ const Home = () => {
       setLoading(true);
       
       try {
-        const testResponse = await fetch(`${API_URL}/`, { timeout: 3000 });
-        if (testResponse.ok) {
-          setIsBackendConnected(true);
-          console.log('✅ Server is connected');
-        }
+      // FIX: Remove timeout or use AbortController
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
+      const testResponse = await fetch(`${API_URL}/health`, { 
+        signal: controller.signal 
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (testResponse.ok) {
+        setIsBackendConnected(true);
+        console.log('✅ Server is connected');
+      }
       } catch (serverError) {
         setIsBackendConnected(false);
         console.log('🌐 Server not connected, using mock data');

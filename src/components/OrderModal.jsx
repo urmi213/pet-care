@@ -82,14 +82,14 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
     };
     
     console.log('🚀 Sending order to backend:', orderPayload);
-    console.log('📡 API URL: https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app/orders');
+    console.log('📡 API URL: https://backend-10-five.vercel.app/orders');
 
     setLoading(true);
     
     try {
       // ✅ CORRECTED URL - removed /api prefix
       const response = await axios.post(
-        'https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app/orders',  // শুধু /orders
+        'https://backend-10-five.vercel.app/orders',  // শুধু /orders
         orderPayload,
         {
           headers: { 'Content-Type': 'application/json' },
@@ -137,7 +137,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
         
         // Quick test: Check if backend is accessible
         try {
-          const healthCheck = await axios.get('https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app/health', { timeout: 3000 });
+          const healthCheck = await axios.get('https://backend-10-five.vercel.app/health', { timeout: 3000 });
           console.log('Health check response:', healthCheck.data);
         } catch (healthError) {
           console.error('Backend health check failed:', healthError.message);
@@ -181,7 +181,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
               Product: <span className="font-semibold">{formData.productName}</span>
             </p>
             <p className="text-xs text-blue-600 mt-1">
-              API: https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app/orders
+              API: https://backend-10-five.vercel.app/orders
             </p>
           </div>
           <button
