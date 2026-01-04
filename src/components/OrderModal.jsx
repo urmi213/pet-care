@@ -1,12 +1,15 @@
 import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { FaTimes } from 'react-icons/fa';
+import { FaTimes, FaSave, FaCheckCircle } from 'react-icons/fa';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router';
 
 const OrderModal = ({ listing, onClose, onSuccess }) => {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     buyerName: '',
     email: '',
@@ -23,9 +26,6 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
   useEffect(() => {
     if (!listing || !user) return;
 
-    console.log('🔄 OrderModal received listing:', listing);
-    console.log('👤 Current user:', user);
-
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
@@ -37,7 +37,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
       productId: listing._id || '',
       productName: listing.name || listing.title || 'Product',
       price: listing.price || 0,
-      quantity: 1,
+      quantity: listing.category === 'Pets' ? 1 : 1,
       address: '',
       phone: '',
       date: defaultDate,
@@ -55,8 +55,8 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
     e.preventDefault();
     
     console.log('📝 Form submission started...');
-    console.log('Form data:', formData);
 
+    // Validation
     if (!formData.address.trim()) {
       toast.error('Please enter delivery address');
       return;
@@ -64,6 +64,11 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
     
     if (!formData.phone.trim()) {
       toast.error('Please enter phone number');
+      return;
+    }
+
+    if (!formData.date) {
+      toast.error('Please select a date');
       return;
     }
 
@@ -78,75 +83,59 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
       phone: formData.phone.replace(/\s/g, ''),
       date: formData.date,
       additionalNotes: (formData.additionalNotes || '').trim(),
-      status: 'pending'
+      status: 'pending',
+      category: listing?.category || 'General'
     };
     
-    console.log('🚀 Sending order to backend:', orderPayload);
-    console.log('📡 API URL: https://backend-10-five.vercel.app/orders');
+    console.log('🚀 Sending order to MongoDB:', orderPayload);
 
     setLoading(true);
     
     try {
-      // ✅ CORRECTED URL - removed /api prefix
+      // Send to MongoDB
+      console.log('📡 Sending to backend API...');
       const response = await axios.post(
-        'https://backend-10-five.vercel.app/orders',  // শুধু /orders
+        'https://backend-10-five.vercel.app/orders',
         orderPayload,
         {
           headers: { 'Content-Type': 'application/json' },
-          timeout: 10000
+          timeout: 8000
         }
       );
       
-      console.log('✅ Backend response:', response.data);
+      console.log('✅ MongoDB response:', response.data);
       
       if (response.data.success) {
+        // Show success toast
         const successMessage = listing?.category === 'Pets' 
           ? '🎉 Adoption request submitted successfully!' 
           : '🎉 Order placed successfully!';
         
-        toast.success(successMessage);
-        
+        toast.success(successMessage, {
+          duration: 3000,
+          icon: <FaCheckCircle className="text-green-500" />
+        });
+
         if (onSuccess) onSuccess();
-        if (onClose) onClose();
+        
+        // Close modal after success
+        setTimeout(() => {
+          if (onClose) onClose();
+        }, 1500);
+      } else {
+        throw new Error(response.data.message || 'Failed to save order');
       }
       
     } catch (error) {
       console.error('❌ Order submission error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        response: error.response?.data,
-        status: error.response?.status
-      });
       
-      // Detailed error handling
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        if (error.response.status === 404) {
-          toast.error('API endpoint not found. Check backend URL.');
-        } else if (error.response.status === 400) {
-          toast.error(error.response.data?.message || 'Invalid request data');
-        } else {
-          toast.error(error.response.data?.message || 'Server error');
-        }
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error('No response received. Check if backend is running.');
-        toast.error('Cannot connect to server. Make sure backend is running.');
-        
-        // Quick test: Check if backend is accessible
-        try {
-          const healthCheck = await axios.get('https://backend-10-five.vercel.app/health', { timeout: 3000 });
-          console.log('Health check response:', healthCheck.data);
-        } catch (healthError) {
-          console.error('Backend health check failed:', healthError.message);
-          toast.error('Backend server is not running. Start server first.');
-        }
-      } else {
-        // Something happened in setting up the request
-        toast.error('Failed to place order: ' + error.message);
-      }
+      // Show error toast
+      toast.error(
+        error.response?.data?.message || 
+        error.message || 
+        'Failed to save order. Please try again.',
+        { duration: 4000 }
+      );
       
     } finally {
       setLoading(false);
@@ -154,11 +143,8 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
   };
 
   if (!listing || !user) {
-    console.log('❌ OrderModal: Missing listing or user');
     return null;
   }
-
-  console.log('🎯 OrderModal RENDERING with listing:', listing);
 
   const isPet = listing.category === 'Pets';
 
@@ -180,9 +166,6 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             <p className="text-gray-600 text-sm">
               Product: <span className="font-semibold">{formData.productName}</span>
             </p>
-            <p className="text-xs text-blue-600 mt-1">
-              API: https://backend-10-five.vercel.app/orders
-            </p>
           </div>
           <button
             onClick={onClose}
@@ -195,116 +178,166 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Buyer Information */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-gray-700 mb-3">Buyer Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Buyer Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.buyerName}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                  readOnly
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Product Information */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-gray-700 mb-3">Product Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Product ID *
+                </label>
+                <input
+                  type="text"
+                  value={formData.productId}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Product Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.productName}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Price *
+                </label>
+                <input
+                  type="text"
+                  value={formData.price === 0 ? 'FREE' : `$${formData.price.toFixed(2)}`}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                  readOnly
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Information */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-700">Delivery Information</h3>
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Your Name *
+                Delivery Address *
               </label>
-              <input
-                type="text"
-                name="buyerName"
-                value={formData.buyerName}
+              <textarea
+                name="address"
+                value={formData.address}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="House No, Street, Area, City"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-24"
                 required
                 disabled={loading}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Your Email *
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                readOnly
-              />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="01XXXXXXXXX"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Pickup/Delivery Date *
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                  disabled={loading}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quantity *
+                </label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={formData.quantity}
+                  onChange={handleChange}
+                  min="1"
+                  max={isPet ? 1 : 10}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                  disabled={isPet || loading}
+                />
+                {isPet && (
+                  <p className="text-xs text-gray-500 mt-1">Only 1 pet per adoption</p>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Delivery Address *
-            </label>
-            <textarea
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="House No, Street, Area, City"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-24"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number *
+                Additional Notes (Optional)
               </label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
+              <textarea
+                name="additionalNotes"
+                value={formData.additionalNotes}
                 onChange={handleChange}
-                placeholder="01XXXXXXXXX"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
+                placeholder="Any special instructions or notes..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-20"
                 disabled={loading}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Preferred Date *
-              </label>
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-                disabled={loading}
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Quantity
-            </label>
-            <input
-              type="number"
-              name="quantity"
-              value={formData.quantity}
-              onChange={handleChange}
-              min="1"
-              max={isPet ? 1 : 10}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={isPet || loading}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Additional Notes (Optional)
-            </label>
-            <textarea
-              name="additionalNotes"
-              value={formData.additionalNotes}
-              onChange={handleChange}
-              placeholder="Any special instructions..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-20"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="bg-gray-50 p-4 rounded-lg border">
+          {/* Order Summary */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
             <div className="flex justify-between items-center">
               <div>
-                <p className="font-bold">Order Summary</p>
+                <p className="font-bold text-gray-800">Order Summary</p>
                 <p className="text-sm text-gray-600 mt-1">
                   {formData.productName} × {formData.quantity}
                 </p>
@@ -320,6 +353,7 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
             </div>
           </div>
 
+          {/* Submit Button */}
           <div className="pt-4">
             <button
               type="submit"
@@ -328,19 +362,35 @@ const OrderModal = ({ listing, onClose, onSuccess }) => {
                 isPet 
                   ? 'bg-green-600 hover:bg-green-700 text-white' 
                   : 'bg-blue-600 hover:bg-blue-700 text-white'
-              } disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
+              } disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2`}
             >
               {loading ? (
                 <>
-                  <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
-                  Processing...
+                  <span className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></span>
+                  Saving to MongoDB...
                 </>
               ) : isPet ? (
-                'Submit Adoption Request'
+                <>
+                  <FaCheckCircle /> Submit Adoption Request
+                </>
               ) : (
-                'Place Order'
+                <>
+                  <FaCheckCircle /> Place Order
+                </>
               )}
             </button>
+          </div>
+
+          {/* Info Message */}
+          <div className="text-center text-sm text-gray-500 pt-2">
+            <p className="flex items-center justify-center gap-1">
+              <span className="text-green-500">✓</span>
+              Order will be saved to MongoDB database
+            </p>
+            <p className="flex items-center justify-center gap-1 mt-1">
+              <span className="text-green-500">✓</span>
+              You will receive a confirmation
+            </p>
           </div>
         </form>
       </div>

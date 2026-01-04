@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
-import { FaArrowLeft, FaMapMarkerAlt, FaTag, FaSpinner, FaFilter, FaSearch } from 'react-icons/fa';
+import { FaArrowLeft, FaMapMarkerAlt, FaTag, FaSpinner, FaFilter, FaSearch, FaHeart, FaShoppingCart, FaHome } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 
@@ -14,6 +14,7 @@ const CategoryFilteredProducts = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const [sortBy, setSortBy] = useState('newest');
+  const [favorites, setFavorites] = useState([]);
 
   // Category display names
   const categoryDisplayNames = {
@@ -49,23 +50,42 @@ const CategoryFilteredProducts = () => {
     try {
       setLoading(true);
       
-      // Try backend API first
+      // ✅ FIXED: Use correct Vercel backend URL
+      const API_URL = 'https://backend-10-five.vercel.app';
+      
+      // First try category-specific endpoint
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'https://backend-10-i1qp6b7m5-urmis-projects-37af7542.vercel.app';
+        const response = await axios.get(`${API_URL}/api/listings/category/${categoryName}`);
+        
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          // Success: Got category data from backend
+          setListings(response.data);
+          toast.success(`Found ${response.data.length} ${categoryDisplayNames[categoryName] || categoryName} products`);
+          return;
+        }
+      } catch (categoryError) {
+        console.log('Category endpoint not found, trying all listings:', categoryError.message);
+      }
+      
+      // Fallback: Get all listings and filter locally
+      try {
         const response = await axios.get(`${API_URL}/api/listings`);
         
-        if (response.data.success) {
-          const allListings = response.data.data || [];
-          const categoryList = filterByCategory(allListings, categoryName);
+        if (Array.isArray(response.data)) {
+          const categoryList = filterByCategory(response.data, categoryName);
           setListings(categoryList);
           
           if (categoryList.length > 0) {
             toast.success(`Found ${categoryList.length} products`);
+          } else {
+            toast.info(`No ${categoryName} products found, showing mock data`);
+            useMockCategoryData();
           }
+        } else {
+          useMockCategoryData();
         }
       } catch (apiError) {
-        console.log('Using mock data:', apiError.message);
-        // Use mock data if API fails
+        console.log('API failed, using mock data:', apiError.message);
         useMockCategoryData();
       }
       
@@ -78,20 +98,30 @@ const CategoryFilteredProducts = () => {
   };
 
   const filterByCategory = (listings, category) => {
-    const categoryKeywords = {
-      'pets': ['dog', 'cat', 'puppy', 'kitten', 'pet', 'adoption', 'animal'],
-      'pets-adoption': ['dog', 'cat', 'puppy', 'kitten', 'pet', 'adoption'],
-      'food': ['food', 'treat', 'nutrition', 'meal', 'feed'],
-      'pet-food': ['food', 'treat', 'nutrition', 'meal', 'feed'],
-      'accessories': ['toy', 'leash', 'collar', 'bed', 'scratch', 'carrier', 'accessory'],
-      'care': ['shampoo', 'medicine', 'health', 'care', 'grooming', 'vitamin'],
-      'pet-care': ['shampoo', 'medicine', 'health', 'care', 'grooming', 'vitamin']
+    const categoryMapping = {
+      'pets': ['pets', 'pet', 'dog', 'cat', 'puppy', 'kitten', 'adoption', 'animal'],
+      'pets-adoption': ['pets', 'pet', 'dog', 'cat', 'puppy', 'kitten', 'adoption', 'animal'],
+      'food': ['food', 'feed', 'nutrition', 'meal', 'treat', 'snack'],
+      'pet-food': ['food', 'feed', 'nutrition', 'meal', 'treat', 'snack'],
+      'accessories': ['accessories', 'accessory', 'toy', 'leash', 'collar', 'bed', 'scratch', 'carrier', 'hutch', 'run'],
+      'care': ['care', 'shampoo', 'medicine', 'health', 'grooming', 'vitamin', 'first aid', 'treatment'],
+      'pet-care': ['care', 'shampoo', 'medicine', 'health', 'grooming', 'vitamin', 'first aid', 'treatment']
     };
 
-    const keywords = categoryKeywords[category.toLowerCase()] || [category.toLowerCase()];
+    const keywords = categoryMapping[category.toLowerCase()] || [category.toLowerCase()];
     
     return listings.filter(listing => {
-      const searchText = `${listing.name} ${listing.description} ${listing.category}`.toLowerCase();
+      if (!listing) return false;
+      
+      const searchText = `${listing.name || ''} ${listing.description || ''} ${listing.category || ''}`.toLowerCase();
+      const listingCategory = (listing.category || '').toLowerCase();
+      
+      // Direct category match
+      if (listingCategory && keywords.some(keyword => listingCategory.includes(keyword))) {
+        return true;
+      }
+      
+      // Text search in name/description
       return keywords.some(keyword => searchText.includes(keyword));
     });
   };
@@ -108,7 +138,8 @@ const CategoryFilteredProducts = () => {
         location: 'Dhaka',
         image: 'https://images.unsplash.com/photo-1591160690555-5debfba289f0?w=800&auto=format&fit=crop&q=80',
         description: 'Friendly 3-month-old puppy looking for a forever home.',
-        createdAt: '2024-01-15'
+        createdAt: '2024-01-15',
+        tags: ['dog', 'puppy', 'adoption']
       },
       {
         _id: '2',
@@ -118,7 +149,8 @@ const CategoryFilteredProducts = () => {
         location: 'Chattogram',
         image: 'https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?w=800&auto=format&fit=crop&q=80',
         description: 'Beautiful white Persian kitten, 2 months old.',
-        createdAt: '2024-01-10'
+        createdAt: '2024-01-10',
+        tags: ['cat', 'kitten', 'persian']
       },
       {
         _id: '9',
@@ -128,7 +160,8 @@ const CategoryFilteredProducts = () => {
         location: 'Khulna',
         image: 'https://images.unsplash.com/photo-1556838803-cc94986cb631?w=800&auto=format&fit=crop&q=80',
         description: 'Friendly rabbit needs a new home.',
-        createdAt: '2024-01-05'
+        createdAt: '2024-01-05',
+        tags: ['rabbit', 'adoption']
       },
 
       // Pet Food
@@ -140,7 +173,8 @@ const CategoryFilteredProducts = () => {
         location: 'Sylhet',
         image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=800&auto=format&fit=crop&q=80',
         description: 'High-quality nutritious dog food.',
-        createdAt: '2024-01-12'
+        createdAt: '2024-01-12',
+        tags: ['dog food', 'nutrition']
       },
       {
         _id: '10',
@@ -150,7 +184,8 @@ const CategoryFilteredProducts = () => {
         location: 'Rajshahi',
         image: 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=800&auto=format&fit=crop&q=80',
         description: 'Grain-free cat food with real salmon.',
-        createdAt: '2024-01-08'
+        createdAt: '2024-01-08',
+        tags: ['cat food', 'salmon']
       },
       {
         _id: '11',
@@ -160,7 +195,8 @@ const CategoryFilteredProducts = () => {
         location: 'Dhaka',
         image: 'https://images.unsplash.com/photo-1551085254-e96b210db58a?w=800&auto=format&fit=crop&q=80',
         description: 'Nutritious seed mix for all birds.',
-        createdAt: '2024-01-03'
+        createdAt: '2024-01-03',
+        tags: ['bird food', 'seeds']
       },
 
       // Accessories
@@ -172,7 +208,8 @@ const CategoryFilteredProducts = () => {
         location: 'Khulna',
         image: 'https://images.unsplash.com/photo-1514888286974-6d03bdeacba8?w=800&auto=format&fit=crop&q=80',
         description: 'Durable scratching post with toys.',
-        createdAt: '2024-01-14'
+        createdAt: '2024-01-14',
+        tags: ['cat', 'scratch', 'toy']
       },
       {
         _id: '6',
@@ -182,7 +219,8 @@ const CategoryFilteredProducts = () => {
         location: 'Barishal',
         image: 'https://images.unsplash.com/photo-1504595403659-9088ce801e29?w=800&auto=format&fit=crop&q=80',
         description: 'Spacious wooden rabbit hutch.',
-        createdAt: '2024-01-07'
+        createdAt: '2024-01-07',
+        tags: ['rabbit', 'hutch', 'accessory']
       },
       {
         _id: '12',
@@ -192,7 +230,8 @@ const CategoryFilteredProducts = () => {
         location: 'Dhaka',
         image: 'https://images.unsplash.com/photo-1558602600-93b1184c79c2?w=800&auto=format&fit=crop&q=80',
         description: 'Premium leather dog leash and collar.',
-        createdAt: '2024-01-11'
+        createdAt: '2024-01-11',
+        tags: ['dog', 'leash', 'collar']
       },
       {
         _id: '13',
@@ -202,7 +241,8 @@ const CategoryFilteredProducts = () => {
         location: 'Rajshahi',
         image: 'https://images.unsplash.com/photo-1560743173-567a3b5658b1?w=800&auto=format&fit=crop&q=80',
         description: 'Comfortable and secure pet carrier.',
-        createdAt: '2024-01-09'
+        createdAt: '2024-01-09',
+        tags: ['carrier', 'travel', 'accessory']
       },
 
       // Pet Care Products
@@ -214,7 +254,8 @@ const CategoryFilteredProducts = () => {
         location: 'Rajshahi',
         image: 'https://images.unsplash.com/photo-1560743641-3914f2c45636?w=800&auto=format&fit=crop&q=80',
         description: 'Gentle organic shampoo for pets.',
-        createdAt: '2024-01-13'
+        createdAt: '2024-01-13',
+        tags: ['shampoo', 'organic', 'care']
       },
       {
         _id: '14',
@@ -224,7 +265,8 @@ const CategoryFilteredProducts = () => {
         location: 'Sylhet',
         image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbLm-axSwlzQS2Q7TDt6f3ulkHkMOsnHw_Yw&s',
         description: 'Complete first aid kit for pets.',
-        createdAt: '2024-01-06'
+        createdAt: '2024-01-06',
+        tags: ['first aid', 'emergency', 'care']
       },
       {
         _id: '15',
@@ -234,7 +276,8 @@ const CategoryFilteredProducts = () => {
         location: 'Chattogram',
         image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtuTWXv0qXGzhIeW51o0kjzzq747jRbwmxNQ&s',
         description: 'Effective flea and tick treatment.',
-        createdAt: '2024-01-04'
+        createdAt: '2024-01-04',
+        tags: ['flea', 'tick', 'treatment']
       }
     ];
 
@@ -244,7 +287,7 @@ const CategoryFilteredProducts = () => {
     if (categoryData.length === 0) {
       toast.info('No products found in this category');
     } else {
-      toast.success(`Found ${categoryData.length} products`);
+      toast.success(`Found ${categoryData.length} products (mock data)`);
     }
   };
 
@@ -294,6 +337,58 @@ const CategoryFilteredProducts = () => {
     setSearchQuery('');
     setPriceRange([0, 1000]);
     setSortBy('newest');
+  };
+
+  const toggleFavorite = (productId) => {
+    setFavorites(prev => {
+      if (prev.includes(productId)) {
+        toast.success('Removed from favorites');
+        return prev.filter(id => id !== productId);
+      } else {
+        toast.success('Added to favorites');
+        return [...prev, productId];
+      }
+    });
+  };
+
+  const handleAdopt = (product) => {
+    toast.success(`You've applied to adopt ${product.name}! We'll contact you within 24 hours.`);
+    // In a real app, you would redirect to adoption form
+    navigate(`/adopt/${product._id}`);
+  };
+
+  const handleOrder = (product) => {
+    toast.success(`Added ${product.name} to cart!`);
+    // In a real app, you would add to cart or redirect to checkout
+    navigate(`/order/${product._id}`);
+  };
+
+  // Get button text based on category
+  const getActionButtonText = (listing) => {
+    if (listing.category === 'Pets') {
+      return listing.price === 0 ? '🏠 Free Adoption' : '🏠 Adopt Now';
+    } else if (listing.category === 'Food') {
+      return '🍖 Buy Food';
+    } else if (listing.category === 'Accessories') {
+      return '🧸 Order Now';
+    } else {
+      return '💊 Get Now';
+    }
+  };
+
+  // Get button color based on category
+  const getActionButtonColor = (listing) => {
+    if (listing.category === 'Pets') {
+      return listing.price === 0 
+        ? 'from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
+        : 'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700';
+    } else if (listing.category === 'Food') {
+      return 'from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700';
+    } else if (listing.category === 'Accessories') {
+      return 'from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700';
+    } else {
+      return 'from-red-500 to-red-600 hover:from-red-600 hover:to-red-700';
+    }
   };
 
   if (loading) {
@@ -416,14 +511,33 @@ const CategoryFilteredProducts = () => {
                 key={listing._id}
                 className="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-orange-200 relative"
               >
+                {/* Favorite Button */}
+                <button
+                  onClick={() => toggleFavorite(listing._id)}
+                  className="absolute top-4 right-4 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white shadow-md transition-all"
+                >
+                  <FaHeart 
+                    className={`${favorites.includes(listing._id) ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} 
+                  />
+                </button>
+
                 {/* Badge for Free Adoption */}
-                {listing.price === 0 && (
+                {listing.price === 0 && listing.category === 'Pets' && (
                   <div className="absolute top-4 left-4 z-10">
                     <span className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm font-bold rounded-full shadow-lg">
                       🏠 FREE ADOPTION
                     </span>
                   </div>
                 )}
+
+                {/* Category Badge */}
+                <div className="absolute top-4 left-4 z-10">
+                  {listing.category === 'Pets' && listing.price === 0 && (
+                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                      Adoption Available
+                    </span>
+                  )}
+                </div>
 
                 {/* Product Image */}
                 <div className="h-64 overflow-hidden relative">
@@ -474,16 +588,45 @@ const CategoryFilteredProducts = () => {
                     <span className="text-sm font-medium">{listing.location}</span>
                   </div>
                   
+                  {/* Action Buttons - FIXED VERSION */}
                   <div className="flex gap-3">
+                    {/* View Details Button */}
                     <Link
                       to={`/listing/${listing._id}`}
-                      className="flex-1 text-center bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5"
+                      className="flex-1 text-center bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5"
                     >
-                      View Details
+                      👁️ Details
                     </Link>
-                    <button className="px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors hover:border-orange-300 group">
-                      <FaTag className="text-gray-500 group-hover:text-orange-500 transition-colors" />
-                    </button>
+                    
+                    {/* Main Action Button - Adopt for Pets, Order for others */}
+                    {listing.category === 'Pets' ? (
+                      <button
+                        onClick={() => handleAdopt(listing)}
+                        className={`flex-1 text-center bg-gradient-to-r ${getActionButtonColor(listing)} text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5`}
+                      >
+                        {getActionButtonText(listing)}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleOrder(listing)}
+                        className={`flex-1 text-center bg-gradient-to-r ${getActionButtonColor(listing)} text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5`}
+                      >
+                        {getActionButtonText(listing)}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Info Row */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <FaTag className="text-gray-400" />
+                      <span className="text-xs text-gray-500">
+                        {listing.tags ? listing.tags.slice(0, 2).join(', ') : listing.category}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(listing.createdAt).toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
               </div>
