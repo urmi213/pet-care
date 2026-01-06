@@ -42,7 +42,7 @@ const Login = () => {
     
     if (result.success) {
       setSuccess('Login successful! Redirecting...');
-      setTimeout(() => navigate('/dashboard'), 1000);
+      setTimeout(() => navigate('/'), 1000);
     } else {
       setError(result.error);
     }
@@ -63,7 +63,7 @@ const Login = () => {
         // Page will redirect automatically
       } else {
         setSuccess('Google login successful!');
-        setTimeout(() => navigate('/dashboard'), 1000);
+        setTimeout(() => navigate('/'), 1000);
       }
     } else {
       setError(result.error);

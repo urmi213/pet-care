@@ -1,237 +1,501 @@
-
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useOutletContext } from 'react-router';
+import { 
+  User, Mail, Phone, MapPin, Calendar, Edit, Save, X, Camera,
+  Shield, CreditCard, Bell, Globe, Lock, UserCheck, CheckCircle
+} from 'lucide-react';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
-const Profile = () => {
-  const { user, loading, updateProfile } = useAuth();
+const ProfilePage = () => {
+  const { user } = useOutletContext();
+  const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     address: '',
-    bio: ''
+    city: '',
+    country: '',
+    bio: '',
+    avatar: '',
+    notifications: true,
+    emailNotifications: true,
+    twoFactor: false
   });
 
-  // Initialize form data when user is available
+  // Load user data
   useEffect(() => {
-    if (user && !loading) {
+    if (user) {
+      // Try to get saved profile from localStorage
+      const savedProfile = JSON.parse(localStorage.getItem('userProfile'));
+      
       setFormData({
-        name: user.name || user.displayName || user.email?.split('@')[0] || '',
+        name: user.name || user.displayName || '',
         email: user.email || '',
-        phone: user.phone || '',
-        address: user.address || '',
-        bio: user.bio || ''
+        phone: savedProfile?.phone || '+1 (234) 567-8900',
+        address: savedProfile?.address || '1234 Main Street',
+        city: savedProfile?.city || 'New York',
+        country: savedProfile?.country || 'United States',
+        bio: savedProfile?.bio || 'Pet lover and enthusiast. Passionate about providing the best care for animals.',
+        avatar: user.avatar || user.photoURL || `https://ui-avatars.com/api/?name=${user.name || 'User'}&background=random`,
+        notifications: savedProfile?.notifications !== false,
+        emailNotifications: savedProfile?.emailNotifications !== false,
+        twoFactor: savedProfile?.twoFactor || false
       });
     }
-  }, [user, loading]);
+  }, [user]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!user) return;
-    
-    try {
-      const result = await updateProfile(user.uid, formData);
-      if (result.success) {
-        alert('Profile updated successfully!');
-        setIsEditing(false);
-      } else {
-        alert('Failed to update profile: ' + result.error);
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('An error occurred. Please try again.');
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          avatar: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  // Show loading only during initial load
-  if (loading && !user) {
-    return <LoadingSpinner />;
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      // Save to localStorage (replace with API call)
+      localStorage.setItem('userProfile', JSON.stringify(formData));
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setIsEditing(false);
+      // Show success message
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // If no user after loading, show message
-  if (!user && !loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900">Please log in</h2>
-          <p className="text-gray-600 mt-2">You need to be logged in to view this page.</p>
-        </div>
-      </div>
-    );
-  }
+  const handleCancel = () => {
+    const savedProfile = JSON.parse(localStorage.getItem('userProfile'));
+    setFormData(prev => ({
+      ...prev,
+      ...savedProfile,
+      name: user.name || user.displayName || '',
+      email: user.email || '',
+      avatar: user.avatar || user.photoURL || prev.avatar
+    }));
+    setIsEditing(false);
+  };
 
-  // Debug: Show user data
-  console.log("User data in Profile:", user);
+  if (!user) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-          <p className="text-gray-600 mt-2">Manage your personal information</p>
-        </div>
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
+        <p className="text-gray-600 mt-2">Manage your personal information and account preferences</p>
+      </div>
 
-        {/* Debug Info (Optional - remove in production) */}
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <strong>Storage:</strong> Using localStorage for profile data
-          </p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          {/* Profile Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                {user.name || user.displayName || user.email?.split('@')[0]}
-              </h2>
-              <p className="text-gray-600">{user.email}</p>
-            </div>
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="mt-4 md:mt-0 px-5 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              {isEditing ? 'Cancel Editing' : 'Edit Profile'}
-            </button>
-          </div>
-
-          {/* Profile Form */}
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
-                {isEditing ? (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* Profile Header */}
+        <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-8">
+          <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-6">
+            {/* Avatar Section */}
+            <div className="relative">
+              <img
+                src={formData.avatar}
+                alt={formData.name}
+                className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
+              />
+              {isEditing && (
+                <label className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 cursor-pointer shadow-lg">
+                  <Camera className="h-5 w-5" />
                   <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter your name"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
                   />
-                ) : (
-                  <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                    <p className="text-gray-900">{formData.name || 'Not set'}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
                 </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-900">{user.email}</p>
-                  {user.emailVerified ? (
-                    <span className="text-sm text-green-600 mt-1">✓ Verified</span>
-                  ) : (
-                    <span className="text-sm text-yellow-600 mt-1">Not verified</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                {isEditing ? (
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter phone number"
-                  />
-                ) : (
-                  <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                    <p className="text-gray-900">{formData.phone || 'Not provided'}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Address */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Address
-                </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) => setFormData({...formData, address: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter address"
-                  />
-                ) : (
-                  <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                    <p className="text-gray-900">{formData.address || 'Not provided'}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Bio (Full width) */}
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Bio / About Me
-              </label>
-              {isEditing ? (
-                <textarea
-                  value={formData.bio}
-                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                  rows="4"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Tell us about yourself..."
-                />
-              ) : (
-                <div className="px-4 py-3 bg-gray-50 rounded-lg min-h-[100px]">
-                  <p className="text-gray-900">
-                    {formData.bio || 'No bio added yet. Click Edit Profile to add one.'}
-                  </p>
-                </div>
               )}
             </div>
-
-            {/* Save Button */}
-            {isEditing && (
-              <div className="mt-8 pt-6 border-t">
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Save Changes
-                </button>
+            
+            {/* User Info */}
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-2xl font-bold text-white">{formData.name}</h2>
+              <div className="flex items-center justify-center md:justify-start space-x-2 mt-2">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white/20 text-white">
+                  <Shield className="h-3 w-3 mr-1" />
+                  {user.role === 'admin' ? 'Administrator' : 'Verified User'}
+                </span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white/20 text-white">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Member since {new Date().getFullYear()}
+                </span>
               </div>
-            )}
-          </form>
+              <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
+                <div className="flex items-center text-blue-100">
+                  <Mail className="h-4 w-4 mr-2" />
+                  <span>{formData.email}</span>
+                </div>
+                <div className="flex items-center text-blue-100">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span>Joined {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Edit Button */}
+            <div>
+              {isEditing ? (
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                  <button
+                    onClick={handleCancel}
+                    className="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center disabled:opacity-50"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 flex items-center"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Additional Info */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="font-medium text-gray-900">Account Type</h3>
-            <p className="text-gray-600 mt-1 capitalize">{user.role || 'user'}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="font-medium text-gray-900">User ID</h3>
-            <p className="text-gray-600 mt-1 text-sm font-mono truncate">{user.uid}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="font-medium text-gray-900">Data Storage</h3>
-            <p className="text-gray-600 mt-1">LocalStorage (This device only)</p>
-          </div>
+        {/* Profile Form */}
+        <div className="p-8">
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-8">
+              {/* Personal Information Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">
+                  Personal Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    ) : (
+                      <div className="flex items-center px-4 py-2.5 bg-gray-50 rounded-lg">
+                        <User className="h-5 w-5 mr-3 text-gray-400" />
+                        <span className="text-gray-900">{formData.name}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    ) : (
+                      <div className="flex items-center px-4 py-2.5 bg-gray-50 rounded-lg">
+                        <Mail className="h-5 w-5 mr-3 text-gray-400" />
+                        <span className="text-gray-900">{formData.email}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    ) : (
+                      <div className="flex items-center px-4 py-2.5 bg-gray-50 rounded-lg">
+                        <Phone className="h-5 w-5 mr-3 text-gray-400" />
+                        <span className="text-gray-900">{formData.phone}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Address */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Address
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    ) : (
+                      <div className="flex items-center px-4 py-2.5 bg-gray-50 rounded-lg">
+                        <MapPin className="h-5 w-5 mr-3 text-gray-400" />
+                        <span className="text-gray-900">{formData.address}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* City */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      City
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    ) : (
+                      <div className="px-4 py-2.5 bg-gray-50 rounded-lg">
+                        <span className="text-gray-900">{formData.city}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Country */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Country
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    ) : (
+                      <div className="px-4 py-2.5 bg-gray-50 rounded-lg">
+                        <span className="text-gray-900">{formData.country}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bio Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">About Me</h3>
+                {isEditing ? (
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                    rows="4"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Tell us about yourself..."
+                  />
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-900">{formData.bio}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Preferences Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">
+                  Account Preferences
+                </h3>
+                <div className="space-y-4">
+                  {/* Notifications */}
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Bell className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">Push Notifications</p>
+                        <p className="text-sm text-gray-600">Receive browser notifications</p>
+                      </div>
+                    </div>
+                    {isEditing ? (
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="notifications"
+                          checked={formData.notifications}
+                          onChange={handleInputChange}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    ) : (
+                      <span className={`px-3 py-1 text-sm rounded-full ${
+                        formData.notifications 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {formData.notifications ? 'Enabled' : 'Disabled'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Email Notifications */}
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Mail className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">Email Notifications</p>
+                        <p className="text-sm text-gray-600">Receive email updates</p>
+                      </div>
+                    </div>
+                    {isEditing ? (
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="emailNotifications"
+                          checked={formData.emailNotifications}
+                          onChange={handleInputChange}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    ) : (
+                      <span className={`px-3 py-1 text-sm rounded-full ${
+                        formData.emailNotifications 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {formData.emailNotifications ? 'Enabled' : 'Disabled'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Two-Factor Authentication */}
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Lock className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">Two-Factor Authentication</p>
+                        <p className="text-sm text-gray-600">Add extra security to your account</p>
+                      </div>
+                    </div>
+                    {isEditing ? (
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="twoFactor"
+                          checked={formData.twoFactor}
+                          onChange={handleInputChange}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    ) : (
+                      <span className={`px-3 py-1 text-sm rounded-full ${
+                        formData.twoFactor 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {formData.twoFactor ? 'Enabled' : 'Disabled'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Information */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Account Type</p>
+                    <p className="font-medium text-gray-900 capitalize">{user.role}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Member Since</p>
+                    <p className="font-medium text-gray-900">{new Date().toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Account Status</p>
+                    <p className="font-medium text-green-600">Active</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Last Login</p>
+                    <p className="font-medium text-gray-900">{new Date().toLocaleString('en-US', {
+                      dateStyle: 'short',
+                      timeStyle: 'short'
+                    })}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
 };
 
-export default Profile;
+export default ProfilePage;

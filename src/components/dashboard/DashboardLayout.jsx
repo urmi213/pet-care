@@ -18,16 +18,10 @@ import {
   Shield,
   TrendingUp,
   Search,
-  BarChart3,
   FileText,
   ShoppingCart,
   Heart,
-  MessageCircle,
-  BarChart,
-  Calendar,
-  DollarSign,
-  Target,
-  Activity
+  MessageCircle
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
@@ -43,7 +37,6 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check for mobile
   const [isMobile, setIsMobile] = useState(false);
   
   useEffect(() => {
@@ -59,6 +52,11 @@ const DashboardLayout = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  useEffect(() => {
+    console.log('Current Path:', location.pathname);
+    console.log('User Role:', user?.role);
+  }, [location.pathname, user]);
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -68,7 +66,6 @@ const DashboardLayout = () => {
     return null;
   }
 
-  // User data
   const fullUser = {
     ...user,
     role: user?.role || 'user',
@@ -76,14 +73,13 @@ const DashboardLayout = () => {
     avatar: user?.photoURL || user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`
   };
 
-  // User Role Menu (Minimum 2 items)
   const userMenuItems = [
     { 
       id: 'dashboard',
       name: 'Dashboard', 
       href: '/dashboard', 
       icon: LayoutDashboard,
-      roles: ['user'],
+      roles: ['user', 'admin'],
       description: 'Overview'
     },
     { 
@@ -91,7 +87,7 @@ const DashboardLayout = () => {
       name: 'My Profile', 
       href: '/dashboard/profile', 
       icon: User,
-      roles: ['user'],
+      roles: ['user', 'admin'],
       description: 'Manage profile'
     },
     { 
@@ -117,27 +113,27 @@ const DashboardLayout = () => {
       icon: PlusCircle,
       roles: ['user'],
       description: 'Create new'
+    },
+    { 
+      id: 'favorites',
+      name: 'Favorites', 
+      href: '/dashboard/favorites', 
+      icon: Heart,
+      roles: ['user'],
+      description: 'Saved items'
+    },
+    { 
+      id: 'support',
+      name: 'Support', 
+      href: '/dashboard/support', 
+      icon: MessageCircle,
+      roles: ['user'],
+      description: 'Get help'
     }
   ];
 
-  // Admin Role Menu (Minimum 3 items)
   const adminMenuItems = [
-    { 
-      id: 'dashboard',
-      name: 'Admin Dashboard', 
-      href: '/dashboard', 
-      icon: Shield,
-      roles: ['admin'],
-      description: 'System overview'
-    },
-    { 
-      id: 'users',
-      name: 'User Management', 
-      href: '/dashboard/users', 
-      icon: Users,
-      roles: ['admin'],
-      description: 'Manage users'
-    },
+    
     { 
       id: 'listings',
       name: 'All Listings', 
@@ -163,6 +159,14 @@ const DashboardLayout = () => {
       description: 'Reports & stats'
     },
     { 
+      id: 'reports',
+      name: 'Reports', 
+      href: '/dashboard/reports', 
+      icon: FileText,
+      roles: ['admin'],
+      description: 'System reports'
+    },
+    { 
       id: 'settings',
       name: 'Settings', 
       href: '/dashboard/settings', 
@@ -172,10 +176,9 @@ const DashboardLayout = () => {
     }
   ];
 
-  // Get menu items based on role
   const getMenuItems = () => {
     if (fullUser.role === 'admin') {
-      return adminMenuItems.filter(item => item.roles.includes('admin'));
+      return [...userMenuItems.filter(item => item.roles.includes('admin')), ...adminMenuItems];
     }
     return userMenuItems.filter(item => item.roles.includes('user'));
   };
@@ -196,18 +199,33 @@ const DashboardLayout = () => {
     }
   };
 
-  // Get page title
   const getPageTitle = () => {
-    if (currentPath === '/dashboard') return 'Dashboard Overview';
-    if (currentPath.includes('/my-orders')) return 'My Orders';
-    if (currentPath.includes('/my-listings')) return 'My Listings';
-    if (currentPath.includes('/add-listing')) return 'Add New Listing';
-    if (currentPath.includes('/profile')) return 'My Profile';
-    if (currentPath.includes('/users')) return 'User Management';
-    if (currentPath.includes('/listings')) return 'All Listings';
-    if (currentPath.includes('/orders')) return 'All Orders';
-    if (currentPath.includes('/analytics')) return 'Analytics';
-    if (currentPath.includes('/settings')) return 'Settings';
+    if (currentPath === '/dashboard' || currentPath === '/dashboard/') 
+      return 'Dashboard Overview';
+    if (currentPath.includes('/dashboard/my-orders')) 
+      return 'My Orders';
+    if (currentPath.includes('/dashboard/my-listings')) 
+      return 'My Listings';
+    if (currentPath.includes('/dashboard/add-listing')) 
+      return 'Add New Listing';
+    if (currentPath.includes('/dashboard/profile')) 
+      return 'My Profile';
+    if (currentPath.includes('/dashboard/users')) 
+      return 'User Management';
+    if (currentPath.includes('/dashboard/listings')) 
+      return 'All Listings';
+    if (currentPath.includes('/dashboard/orders')) 
+      return 'All Orders';
+    if (currentPath.includes('/dashboard/analytics')) 
+      return 'Analytics';
+    if (currentPath.includes('/dashboard/settings')) 
+      return 'Settings';
+    if (currentPath.includes('/dashboard/favorites')) 
+      return 'Favorites';
+    if (currentPath.includes('/dashboard/support')) 
+      return 'Support';
+    if (currentPath.includes('/dashboard/reports')) 
+      return 'Reports';
     return 'Dashboard';
   };
 
@@ -217,8 +235,6 @@ const DashboardLayout = () => {
       <nav className="fixed top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            
-            {/* Left Section */}
             <div className="flex items-center">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -238,9 +254,7 @@ const DashboardLayout = () => {
               </div>
             </div>
 
-            {/* Right Section */}
             <div className="flex items-center space-x-4">
-              {/* Search Bar */}
               <form onSubmit={handleSearch} className="hidden md:block">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -254,7 +268,6 @@ const DashboardLayout = () => {
                 </div>
               </form>
 
-              {/* Notifications */}
               <div className="relative">
                 <button
                   onClick={() => {
@@ -266,33 +279,8 @@ const DashboardLayout = () => {
                   <Bell size={20} className="text-gray-600" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                 </button>
-
-                {notificationDropdownOpen && (
-                  <div className="absolute right-0 z-50 w-80 mt-2 bg-white rounded-lg shadow-lg border border-gray-200">
-                    <div className="p-4 border-b">
-                      <h3 className="font-semibold text-gray-900">Notifications</h3>
-                      <p className="text-xs text-gray-500">You have 3 unread notifications</p>
-                    </div>
-                    <div className="py-2 max-h-96 overflow-y-auto">
-                      <div className="px-4 py-3 hover:bg-gray-50">
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                              <Bell size={14} className="text-blue-600" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm text-gray-900">New order received</p>
-                            <p className="text-xs text-gray-500">2 minutes ago</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Profile Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => {
@@ -356,7 +344,6 @@ const DashboardLayout = () => {
           </div>
         </div>
 
-        {/* Close dropdowns on outside click */}
         {(profileDropdownOpen || notificationDropdownOpen) && (
           <div 
             className="fixed inset-0 z-40" 
@@ -375,7 +362,6 @@ const DashboardLayout = () => {
         }`}
       >
         <div className="h-full overflow-y-auto">
-          {/* User Info */}
           <div className="p-6 border-b">
             <div className="flex items-center space-x-3">
               <img
@@ -392,7 +378,6 @@ const DashboardLayout = () => {
             </div>
           </div>
 
-          {/* Menu Items */}
           <nav className="p-4">
             <ul className="space-y-1">
               {menuItems.map((item) => {
@@ -431,7 +416,6 @@ const DashboardLayout = () => {
         }`}
       >
         <div className="p-4 md:p-6">
-          {/* Mobile Sidebar Overlay */}
           {sidebarOpen && isMobile && (
             <div
               className="fixed inset-0 z-30 bg-black bg-opacity-50 md:hidden"
@@ -439,7 +423,6 @@ const DashboardLayout = () => {
             />
           )}
           
-          {/* Content Area */}
           <div className="max-w-7xl mx-auto">
             <Outlet context={{ user: fullUser }} />
           </div>
